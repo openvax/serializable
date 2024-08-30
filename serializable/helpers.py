@@ -14,9 +14,8 @@
 Helper functions for deconstructing classes, functions, and user-defined
 objects into serializable types.
 """
+import json
 from types import FunctionType, BuiltinFunctionType
-
-import simplejson as json
 
 from .primitive_types import return_primitive
 
