@@ -10,6 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+
 def eq_(x, y, s=None):
     if s:
         assert x == y, s

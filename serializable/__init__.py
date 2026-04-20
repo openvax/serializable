@@ -11,22 +11,21 @@
 # limitations under the License.
 
 
-from .serializable import Serializable
 from .helpers import (
-    to_serializable_repr,
-    from_serializable_repr,
-    to_json,
     from_json,
+    from_serializable_repr,
     to_dict,
+    to_json,
+    to_serializable_repr,
 )
-
-__version__ = "0.4.1"
+from .serializable import Serializable
+from .version import __version__
 
 __all__ = [
     "Serializable",
-    "to_serializable_repr",
-    "from_serializable_repr",
-    "to_json",
     "from_json",
+    "from_serializable_repr",
     "to_dict",
+    "to_json",
+    "to_serializable_repr",
 ]

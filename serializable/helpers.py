@@ -14,11 +14,13 @@
 Helper functions for deconstructing classes, functions, and user-defined
 objects into serializable types.
 """
-from types import FunctionType, BuiltinFunctionType
+
+from types import BuiltinFunctionType, FunctionType
 
 import simplejson as json
 
 from .primitive_types import return_primitive
+
 
 def init_arg_names(obj):
     """
@@ -32,48 +34,51 @@ def init_arg_names(obj):
     except AttributeError:
         try:
             init_code = obj.__new__.__func__.__code__
-        except AttributeError:
+        except AttributeError as exc:
             # if object is a namedtuple then we can return its fields
             # as the required initial args
             if hasattr(obj, "_fields"):
                 return obj._fields
-            else:
-                raise ValueError("Cannot determine args to %s.__init__" % (obj,))
+            raise ValueError(f"Cannot determine args to {obj}.__init__") from exc
 
-    arg_names = init_code.co_varnames[:init_code.co_argcount]
+    arg_names = init_code.co_varnames[: init_code.co_argcount]
     # drop self argument
     nonself_arg_names = arg_names[1:]
     return nonself_arg_names
 
+
 def simple_object_to_dict(self):
     return {name: getattr(self, name) for name in init_arg_names(self)}
 
-def _lookup_value(module_string, name, _cache={}):
-    key = (module_string, name)
-    if key in _cache:
-        value = _cache[key]
-    else:
-        module_parts = module_string.split(".")
-        value = None
-        for i in range(1, len(module_parts) + 1):
-            try:
-                # try importing successively longer chains of
-                # sub-modules but break when we hit something that's
-                # not a module but actually data
-                qualified_name = ".".join(module_parts[:i])
-                value = __import__(
-                    qualified_name,
-                    fromlist=module_parts[:i - 1])
-            except ImportError:
-                break
 
-        if value is None:
-            raise ImportError(module_parts[0])
-        # once we've imported as much as we can, continue with getattr
-        # lookups
-        for attribute_name in module_parts[i:] + name.split("."):
-            value = getattr(value, attribute_name)
-        _cache[key] = value
+_MODULE_LOOKUP_CACHE: dict = {}
+
+
+def _lookup_value(module_string, name):
+    key = (module_string, name)
+    if key in _MODULE_LOOKUP_CACHE:
+        return _MODULE_LOOKUP_CACHE[key]
+
+    module_parts = module_string.split(".")
+    value = None
+    i = 0
+    for i in range(1, len(module_parts) + 1):
+        try:
+            # try importing successively longer chains of
+            # sub-modules but break when we hit something that's
+            # not a module but actually data
+            qualified_name = ".".join(module_parts[:i])
+            value = __import__(qualified_name, fromlist=module_parts[: i - 1])
+        except ImportError:
+            break
+
+    if value is None:
+        raise ImportError(module_parts[0])
+    # once we've imported as much as we can, continue with getattr
+    # lookups
+    for attribute_name in module_parts[i:] + name.split("."):
+        value = getattr(value, attribute_name)
+    _MODULE_LOOKUP_CACHE[key] = value
     return value
 
 
@@ -84,9 +89,11 @@ def class_from_serializable_representation(class_repr):
     """
     return _lookup_value(class_repr["__module__"], class_repr["__name__"])
 
+
 def get_module_name(obj):
     module_name = obj.__module__
     return module_name
+
 
 def class_to_serializable_representation(cls):
     """
@@ -99,6 +106,7 @@ def class_to_serializable_representation(cls):
     """
     return {"__module__": get_module_name(cls), "__name__": cls.__name__}
 
+
 def function_from_serializable_representation(fn_repr):
     """
     Given the name of a module and a function it contains, imports that module
@@ -106,27 +114,28 @@ def function_from_serializable_representation(fn_repr):
     """
     return _lookup_value(fn_repr["__module__"], fn_repr["__name__"])
 
+
 def function_to_serializable_representation(fn):
     """
     Converts a Python function into a serializable representation. Does not
     currently work for methods or functions with closure data.
     """
     if type(fn) not in (FunctionType, BuiltinFunctionType):
-        raise ValueError(
-            "Can't serialize %s : %s, must be globally defined function" % (
-                fn, type(fn),))
+        raise ValueError(f"Can't serialize {fn} : {type(fn)}, must be globally defined function")
 
     if hasattr(fn, "__closure__") and fn.__closure__ is not None:
-        raise ValueError("No serializable representation for closure %s" % (fn,))
+        raise ValueError(f"No serializable representation for closure {fn}")
 
     return {"__module__": get_module_name(fn), "__name__": fn.__name__}
 
+
 SERIALIZED_DICTIONARY_KEYS_FIELD = "__serialized_keys__"
-SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX = (
-    SERIALIZED_DICTIONARY_KEYS_FIELD + "element_")
+SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX = SERIALIZED_DICTIONARY_KEYS_FIELD + "element_"
+
 
 def index_to_serialized_key_name(index):
-    return "%s%d" % (SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX, index)
+    return f"{SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX}{index:d}"
+
 
 def parse_serialized_keys_index(name):
     """
@@ -135,10 +144,11 @@ def parse_serialized_keys_index(name):
     """
     if name.startswith(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX):
         try:
-            return int(name[len(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX):])
-        except:
+            return int(name[len(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX) :])
+        except ValueError:
             pass
     return None
+
 
 def dict_to_serializable_repr(x):
     """
@@ -153,7 +163,7 @@ def dict_to_serializable_repr(x):
     # use the class of x rather just dict since we might want to convert
     # derived classes such as OrderedDict
     result = type(x)()
-    for (k, v) in x.items():
+    for k, v in x.items():
         if not isinstance(k, str):
             # JSON does not support using complex types such as tuples
             # or user-defined objects with implementations of __hash__ as
@@ -174,6 +184,7 @@ def dict_to_serializable_repr(x):
         result[SERIALIZED_DICTIONARY_KEYS_FIELD] = serialized_key_list
     return result
 
+
 def from_serializable_dict(x):
     """
     Reconstruct a dictionary by recursively reconstructing all its keys and
@@ -192,9 +203,7 @@ def from_serializable_dict(x):
         return _lookup_value(x.pop("__module__"), x.pop("__name__"))
 
     non_string_key_objects = [
-        from_json(serialized_key)
-        for serialized_key
-        in x.pop(SERIALIZED_DICTIONARY_KEYS_FIELD, [])
+        from_json(serialized_key) for serialized_key in x.pop(SERIALIZED_DICTIONARY_KEYS_FIELD, [])
     ]
     converted_dict = type(x)()
     for k, v in x.items():
@@ -207,14 +216,15 @@ def from_serializable_dict(x):
         class_object = converted_dict.pop("__class__")
         if "__value__" in converted_dict:
             return class_object(converted_dict["__value__"])
-        elif hasattr(class_object, "from_dict"):
+        if hasattr(class_object, "from_dict"):
             return class_object.from_dict(converted_dict)
-        else:
-            return class_object(**converted_dict)
+        return class_object(**converted_dict)
     return converted_dict
+
 
 def list_to_serializable_repr(x):
     return [to_serializable_repr(element) for element in x]
+
 
 def to_dict(obj):
     """
@@ -224,14 +234,13 @@ def to_dict(obj):
     """
     if isinstance(obj, dict):
         return obj
-    elif hasattr(obj, "to_dict"):
+    if hasattr(obj, "to_dict"):
         return obj.to_dict()
     try:
         return simple_object_to_dict(obj)
-    except:
-        raise ValueError(
-            "Cannot convert %s : %s to dictionary" % (
-                obj, type(obj)))
+    except Exception as exc:
+        raise ValueError(f"Cannot convert {obj} : {type(obj)} to dictionary") from exc
+
 
 @return_primitive
 def to_serializable_repr(x):
@@ -242,34 +251,31 @@ def to_serializable_repr(x):
     t = type(x)
     if isinstance(x, list):
         return list_to_serializable_repr(x)
-    elif t in (set, tuple):
+    if t in (set, tuple):
         return {
             "__class__": class_to_serializable_representation(t),
-            "__value__": list_to_serializable_repr(x)
+            "__value__": list_to_serializable_repr(x),
         }
-    elif isinstance(x, dict):
+    if isinstance(x, dict):
         return dict_to_serializable_repr(x)
-    elif isinstance(x, (FunctionType, BuiltinFunctionType)):
+    if isinstance(x, (FunctionType, BuiltinFunctionType)):
         return function_to_serializable_representation(x)
-    elif type(x) is type:
+    if type(x) is type:
         return class_to_serializable_representation(x)
-    else:
-        state_dictionary = to_serializable_repr(to_dict(x))
-        state_dictionary["__class__"] = class_to_serializable_representation(
-            x.__class__)
-        return state_dictionary
+    state_dictionary = to_serializable_repr(to_dict(x))
+    state_dictionary["__class__"] = class_to_serializable_representation(x.__class__)
+    return state_dictionary
+
 
 @return_primitive
 def from_serializable_repr(x):
     t = type(x)
     if isinstance(x, list):
         return t([from_serializable_repr(element) for element in x])
-    elif isinstance(x, dict):
+    if isinstance(x, dict):
         return from_serializable_dict(x)
-    else:
-        raise TypeError(
-            "Cannot convert %s : %s from serializable representation to object" % (
-                x, type(x)))
+    raise TypeError(f"Cannot convert {x} : {type(x)} from serializable representation to object")
+
 
 def to_json(x):
     """
@@ -277,6 +283,7 @@ def to_json(x):
     other primitive object.
     """
     return json.dumps(to_serializable_repr(x))
+
 
 def from_json(json_string):
     return from_serializable_repr(json.loads(json_string))

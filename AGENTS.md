@@ -1,0 +1,97 @@
+## Repo Info
+
+- **Package**: `serializable` — base class with serialization helpers for user-defined Python objects.
+- **GitHub**: https://github.com/openvax/serializable
+- **PyPI**: https://pypi.org/project/serializable/
+- **Author**: Alex Rubinsteyn <alex.rubinsteyn@unc.edu>
+- **Primary branch**: `master`
+
+---
+
+## Golden Rules
+
+1. **Never commit to `master`.** Always `git checkout -b <feature-branch>` before editing. Land via PR.
+2. **Every PR bumps the version.** Even doc-only PRs — at minimum a patch bump. Edit `serializable/version.py`.
+3. **"Done" means merged AND deployed to PyPI** — never stop at merge. After a PR merges, run `./deploy.sh` from a clean `master`. Skipping deploy = task not done.
+4. **File problems as issues, don't silently work around them.** If you hit a bug here or in a sibling openvax repo, open a GitHub issue on the correct repo and link it from the PR.
+5. **After a PR ships, look for the next block of work.** Read open issues across relevant openvax repos, group by dependency + urgency. Prefer *foundational* changes that unblock multiple downstream improvements; otherwise chain the smallest independent improvements.
+
+---
+
+## Before Completing Any Task
+
+Before considering any code change complete, you MUST:
+
+1. **Run `./format.sh`** — Auto-format all code
+2. **Run `./lint.sh`** — Verify linting passes (runs both `ruff check` and `ruff format --check`)
+3. **Run `./test.sh`** — Verify all tests pass
+
+Do not tell the user you are "done" or that changes are "complete" until all three of these pass.
+
+## Scripts
+
+- `./format.sh` — Formats code with ruff (run this first)
+- `./lint.sh` — Checks linting and formatting (must pass). **Always use this for linting if it exists.**
+- `./test.sh` — Runs pytest with coverage (must pass)
+- `./deploy.sh` — Builds the distribution and uploads to PyPI via `twine` (gates on `lint.sh` and `test.sh`). **Always use this for deploying if it exists.**
+- `./develop.sh` — Installs package in development mode into `.venv`
+
+## Code Style
+
+- Use ruff for formatting and linting
+- Configuration is in `pyproject.toml` under `[tool.ruff]`
+- Line length: 100 characters
+- Target Python version: 3.9+
+
+---
+
+## Workflow Orchestration
+
+### 1. Upfront Planning
+- For ANY non-trivial task (3+ steps or architectural decisions): write a detailed spec before touching code
+- If something goes sideways, STOP and re-plan immediately — don't keep pushing
+- Use planning/verification steps, not just building
+- Write detailed specs upfront to reduce ambiguity
+
+### 2. Self-Improvement Loop
+- After ANY correction from the user: update `tasks/lessons.md` with the pattern
+- Write rules for yourself that prevent the same mistake
+- Ruthlessly iterate on these lessons until mistake rate drops
+- Review lessons at session start for relevant project
+
+### 3. Verification Before Done
+- Never mark a task complete without proving it works
+- Diff behavior between the latest code and your changes when relevant
+- Ask yourself: "Would a staff engineer approve this?"
+- Run tests, check logs, demonstrate correctness
+
+### 4. Demand Elegance (Balanced)
+- For non-trivial changes: pause and ask "is there a more elegant way?"
+- If a fix feels hacky: "Knowing everything I know now, implement the elegant solution"
+- Skip this for simple, obvious fixes — don't over-engineer
+- Challenge your own work before presenting it
+
+### 5. Autonomous Bug Fixing
+- When given a bug report: just fix it. Don't ask for hand-holding
+- Point at logs, errors, failing tests — then resolve them
+- Zero context switching required from the user
+- Fix failing unit tests without being told how
+
+---
+
+## Task Management
+
+1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
+2. **Verify Plan**: Check in before starting implementation
+3. **Track Progress**: Mark items complete as you go
+4. **Explain Changes**: High-level summary at each step
+5. **Document Results**: Add review section to `tasks/todo.md`
+6. **Capture Lessons**: Update `tasks/lessons.md` after corrections
+
+---
+
+## Core Principles
+
+- **Simplicity First**: Make every change as simple as possible. Impact minimal code.
+- **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
+- **Minimal Impact**: Changes should only touch what's necessary. Avoid introducing bugs.

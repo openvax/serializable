@@ -11,14 +11,14 @@
 # limitations under the License.
 
 
-from serializable import (
-    from_serializable_repr,
-    to_serializable_repr
-)
+from serializable import from_serializable_repr, to_serializable_repr
+
 from .common import eq_
 
-class A(object):
+
+class A:
     pass
+
 
 def test_serialize_custom_class():
     A_reconstructed = from_serializable_repr(to_serializable_repr(A))

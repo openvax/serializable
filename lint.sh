@@ -1,12 +1,13 @@
-#!/bin/bash
-set -o errexit
+#!/usr/bin/env bash
 
-# getting false positives due to this issue with pylint:
-# https://bitbucket.org/logilab/pylint/issues/701/false-positives-with-not-an-iterable-and
+set -e
 
-find serializable -name '*.py' \
-  | xargs pylint \
-  --errors-only \
-  --disable=unsubscriptable-object,not-an-iterable
+SOURCES="serializable tests"
 
-echo 'Passes pylint check'
+echo "Running ruff check..."
+ruff check $SOURCES
+
+echo "Running ruff format check..."
+ruff format --check $SOURCES
+
+echo "All checks passed!"

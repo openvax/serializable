@@ -10,18 +10,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function, division, absolute_import
 
+from typing import ClassVar
 
 from .helpers import (
-    from_serializable_repr,
-    to_serializable_repr,
-    to_json,
     from_json,
+    from_serializable_repr,
     simple_object_to_dict,
+    to_json,
+    to_serializable_repr,
 )
 
-class Serializable(object):
+
+class Serializable:
     """
     Base class for all PyEnsembl objects which provides default
     methods such as to_json, from_json, __reduce__, and from_dict
@@ -32,9 +33,8 @@ class Serializable(object):
     """
 
     def __str__(self):
-        return "%s(%s)" % (
-            self.__class__.__name__,
-            ", ".join("%s=%s" % (k, v) for (k, v) in self.to_dict().items()))
+        fields = ", ".join(f"{k}={v}" for (k, v) in self.to_dict().items())
+        return f"{self.__class__.__name__}({fields})"
 
     def __repr__(self):
         return str(self)
@@ -70,7 +70,7 @@ class Serializable(object):
 
     # dictionary mapping old keywords to either new names or
     # None if the keyword has been removed from a class
-    _SERIALIZABLE_KEYWORD_ALIASES = {}
+    _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict] = {}
 
     @classmethod
     def _update_kwargs(cls, kwargs):
@@ -80,8 +80,8 @@ class Serializable(object):
         # check every class in the inheritance chain for its own
         # definition of _KEYWORD_ALIASES
         for klass in cls.mro():
-            keyword_rename_dict = getattr(klass, '_SERIALIZABLE_KEYWORD_ALIASES', {})
-            for (old_name, new_name) in  keyword_rename_dict.items():
+            keyword_rename_dict = getattr(klass, "_SERIALIZABLE_KEYWORD_ALIASES", {})
+            for old_name, new_name in keyword_rename_dict.items():
                 if old_name in kwargs:
                     old_value = kwargs.pop(old_name)
                     if new_name and new_name not in kwargs:
@@ -123,7 +123,7 @@ class Serializable(object):
         """
         Construct a VariantCollection from a JSON file.
         """
-        with open(path, 'r') as f:
+        with open(path) as f:
             json_string = f.read()
         return cls.from_json(json_string)
 
