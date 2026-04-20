@@ -44,7 +44,7 @@ class LegacyTag(Serializable):
 @dataclass
 class Tagged(DataclassSerializable):
     label: str
-    tag: LegacyTag = None
+    tag: LegacyTag | None = None
 
 
 @dataclass
@@ -56,6 +56,12 @@ class Inner(DataclassSerializable):
 class Outer(DataclassSerializable):
     name: str
     inner: Inner
+
+
+@dataclass(frozen=True)
+class FrozenPoint(DataclassSerializable):
+    x: float
+    y: float
 
 
 def test_to_dict_returns_field_values():
@@ -101,17 +107,19 @@ def test_dataclass_eq_and_repr_not_overridden_by_mixin():
 
 
 def test_frozen_dataclass_is_hashable():
-    @dataclass(frozen=True)
-    class FrozenPoint(DataclassSerializable):
-        x: float
-        y: float
-
     p1 = FrozenPoint(1.0, 2.0)
     p2 = FrozenPoint(1.0, 2.0)
     # Equal, hashable, and usable as a set member.
     assert p1 == p2
     assert hash(p1) == hash(p2)
     assert {p1, p2} == {p1}
+
+
+def test_frozen_dataclass_pickle_roundtrip():
+    # __reduce__ goes through cls(**kwargs), which must work on frozen
+    # dataclasses even though their __setattr__ is disabled.
+    p = FrozenPoint(1.0, 2.0)
+    eq_(pickle.loads(pickle.dumps(p)), p)
 
 
 def test_keyword_aliases_rename():
@@ -134,6 +142,27 @@ def test_keyword_aliases_drop():
     # Old wire format with an extra field that has since been dropped.
     obj = Dropped.from_dict({"kept": 5, "removed": "ignored"})
     eq_(obj, Dropped(kept=5))
+
+
+def test_keyword_aliases_inherited_from_parent():
+    # Aliases defined on a parent class should apply when loading a child,
+    # so migrations can live on a shared base without every subclass having
+    # to restate them.
+    @dataclass
+    class ParentWithAliases(DataclassSerializable):
+        kept: int
+        _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict[str, str | None]] = {
+            "old_kept": "kept",
+            "removed": None,
+        }
+
+    @dataclass
+    class Child(ParentWithAliases):
+        extra: str = ""
+
+    # Rename and drop should both fire via the inherited alias dict.
+    obj = Child.from_dict({"old_kept": 7, "removed": "gone", "extra": "hi"})
+    eq_(obj, Child(kept=7, extra="hi"))
 
 
 def test_from_dict_rejects_unknown_field_without_alias():
