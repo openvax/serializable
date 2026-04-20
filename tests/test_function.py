@@ -12,13 +12,16 @@
 
 
 from serializable import (
-    to_serializable_repr,
     from_serializable_repr,
+    to_serializable_repr,
 )
+
 from .common import eq_
+
 
 def global_fn():
     pass
+
 
 def test_serialize_custom_function():
     fn_reconstructed = from_serializable_repr(to_serializable_repr(global_fn))

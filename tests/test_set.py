@@ -11,16 +11,19 @@
 # limitations under the License.
 
 from serializable import (
-    to_serializable_repr,
+    from_json,
     from_serializable_repr,
     to_json,
-    from_json,
+    to_serializable_repr,
 )
+
 from .common import eq_
+
 
 def test_tuple_to_serializable():
     x = {1, 2.0, "wolves"}
     eq_(x, from_serializable_repr(to_serializable_repr(x)))
+
 
 def test_tuple_to_json():
     x = {1, 2.0, "wolves"}
