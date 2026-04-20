@@ -11,6 +11,7 @@
 # limitations under the License.
 
 
+from .dataclass_serializable import DataclassSerializable
 from .helpers import (
     from_json,
     from_serializable_repr,
@@ -22,6 +23,7 @@ from .serializable import Serializable
 from .version import __version__
 
 __all__ = [
+    "DataclassSerializable",
     "Serializable",
     "from_json",
     "from_serializable_repr",
