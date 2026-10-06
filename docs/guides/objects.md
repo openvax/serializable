@@ -3,8 +3,10 @@
 ## Constructor-based classes
 
 Inherit from `Serializable` when you already have a normal constructor. Store
-an attribute for each constructor argument, or implement `to_dict()` with keys
-that the constructor accepts.
+an attribute for each positional constructor argument, or implement `to_dict()`
+with keys that the constructor accepts. Keyword-only arguments (after `*`) are
+left out of the default `to_dict()`, so they can hold constructor options which
+aren't part of the saved state.
 
 ```python
 from serializable import Serializable
@@ -51,6 +53,23 @@ True
 `DataclassSerializable` provides JSON string methods, without the file helpers.
 For a dataclass, write `object.to_json()` with `Path.write_text()` and reload
 the text with `YourClass.from_json()`.
+
+## Pickle objects
+
+Pickling uses the same `to_dict()` and `from_dict()` methods as JSON, so
+[renamed fields](migration.md) are handled the same way. Pickles written by
+versions before 1.2.0 can still be loaded.
+
+```python
+import pickle
+
+restored = pickle.loads(pickle.dumps(sample))
+print(restored == sample)
+```
+
+```text
+True
+```
 
 ## Nested objects and collections
 

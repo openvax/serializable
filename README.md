@@ -41,8 +41,12 @@ helpers.
 
 A derived class must either:
 
-- have a member data matching the name of each argument to `__init__`
+- have a member data matching the name of each positional argument to `__init__`
 - provide a user-defined `to_dict()` method which returns a dictionary whose keys match the arguments to `__init__`
+
+Keyword-only arguments to `__init__` (those after `*`) are left out of the default `to_dict()`, so they can be used for constructor options which aren't part of an object's serialized state.
+
+Pickling goes through the same `to_dict()` / `from_dict()` pair, so pickles also survive renamed keywords (see below). Pickles written by versions before 1.2.0 can still be loaded.
 
 If you change the keyword arguments to a class which derives from `Serializable` but would like to be able to deserialize older JSON representations then you can define a class-level dictionary called `_SERIALIZABLE_KEYWORD_ALIASES` which maps old keywords to new names (or `None` if a keyword was removed).
 

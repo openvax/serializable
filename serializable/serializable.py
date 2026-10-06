@@ -13,13 +13,7 @@
 
 from typing import ClassVar
 
-from .helpers import (
-    from_json,
-    from_serializable_repr,
-    simple_object_to_dict,
-    to_json,
-    to_serializable_repr,
-)
+from .helpers import from_json, simple_object_to_dict, to_json
 
 
 class Serializable:
@@ -48,8 +42,10 @@ class Serializable:
         (bool, string, int, float), primitive collections
         (int, list, tuple, set) or instances of Serializable.
 
-        The default implementation is to assume all the arguments to __init__
-        have fields of the same name on a serializable object.
+        The default implementation is to assume all the positional arguments
+        to __init__ have fields of the same name on a serializable object.
+        Keyword-only arguments are excluded, so they can be used for
+        constructor options which aren't part of the serialized state.
         """
         return simple_object_to_dict(self)
 
@@ -90,9 +86,9 @@ class Serializable:
     def from_dict(cls, state_dict):
         """
         Given a dictionary of flattened fields (result of calling to_dict()),
-        returns an instance.
+        returns an instance. Does not modify `state_dict`.
         """
-        state_dict = cls._reconstruct_nested_objects(state_dict)
+        state_dict = cls._reconstruct_nested_objects(dict(state_dict))
         return cls(**cls._update_kwargs(state_dict))
 
     def to_json(self):
@@ -127,10 +123,11 @@ class Serializable:
     def __reduce__(self):
         """
         Overriding this method directs the default pickler to reconstruct
-        this object using our from_dict method.
-        """
+        this object using our from_dict method, so pickles survive the same
+        changes to a class (e.g. renamed keywords) as JSON does. Values in
+        to_dict() are pickled natively.
 
-        # I wish I could just return (self.from_dict, (self.to_dict(),) but
-        # Python 2 won't pickle the class method from_dict so instead have to
-        # use globally defined functions.
-        return (from_serializable_repr, (to_serializable_repr(self),))
+        Pickles written before serializable 1.2.0 call from_serializable_repr
+        instead, which remains supported.
+        """
+        return (type(self).from_dict, (self.to_dict(),))
