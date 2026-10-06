@@ -228,8 +228,8 @@ def list_to_serializable_repr(x):
 
 def to_dict(obj):
     """
-    If value wasn't isn't a primitive scalar or collection then it needs to
-    either implement to_dict (instances of Serializable) or has member
+    If value isn't a primitive scalar or collection then it needs to
+    either implement to_dict (instances of Serializable) or have member
     data matching each required arg of __init__.
     """
     if isinstance(obj, dict):

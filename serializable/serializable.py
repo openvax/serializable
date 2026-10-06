@@ -27,9 +27,7 @@ class Serializable:
     Base class for user-defined objects which provides default
     methods such as to_json, from_json, __reduce__, and from_dict
 
-    Relies on the following condition:
-         (1) a user-defined to_dict method
-         (2) the keys of to_dict() must match the arguments to __init__
+    Relies on the keys of to_dict() matching the arguments to __init__.
     """
 
     def __str__(self):
