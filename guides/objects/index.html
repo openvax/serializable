@@ -394,6 +394,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pickle-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pickle objects
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nested-objects-and-collections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -612,6 +623,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#pickle-objects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pickle objects
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#nested-objects-and-collections" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -645,8 +667,10 @@
 <h1 id="save-existing-classes-and-files">Save existing classes and files<a class="headerlink" href="#save-existing-classes-and-files" title="Permanent link">&para;</a></h1>
 <h2 id="constructor-based-classes">Constructor-based classes<a class="headerlink" href="#constructor-based-classes" title="Permanent link">&para;</a></h2>
 <p>Inherit from <code>Serializable</code> when you already have a normal constructor. Store
-an attribute for each constructor argument, or implement <code>to_dict()</code> with keys
-that the constructor accepts.</p>
+an attribute for each positional constructor argument, or implement <code>to_dict()</code>
+with keys that the constructor accepts. Keyword-only arguments (after <code>*</code>) are
+left out of the default <code>to_dict()</code>, so they can hold constructor options which
+aren't part of the saved state.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">serializable</span><span class="w"> </span><span class="kn">import</span> <span class="n">Serializable</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Sample</span><span class="p">(</span><span class="n">Serializable</span><span class="p">):</span>
@@ -681,6 +705,17 @@ existing file.</p>
 <p><code>DataclassSerializable</code> provides JSON string methods, without the file helpers.
 For a dataclass, write <code>object.to_json()</code> with <code>Path.write_text()</code> and reload
 the text with <code>YourClass.from_json()</code>.</p>
+<h2 id="pickle-objects">Pickle objects<a class="headerlink" href="#pickle-objects" title="Permanent link">&para;</a></h2>
+<p>Pickling uses the same <code>to_dict()</code> and <code>from_dict()</code> methods as JSON, so
+<a href="../migration/">renamed fields</a> are handled the same way. Pickles written by
+versions before 1.2.0 can still be loaded.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+
+<span class="n">restored</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">sample</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">restored</span> <span class="o">==</span> <span class="n">sample</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>True
+</code></pre></div>
 <h2 id="nested-objects-and-collections">Nested objects and collections<a class="headerlink" href="#nested-objects-and-collections" title="Permanent link">&para;</a></h2>
 <p>Module-level helpers serialize supported containers as well as individual
 objects. Continuing with <code>sample</code> from above:</p>

@@ -1130,7 +1130,9 @@ applying <code>_SERIALIZABLE_KEYWORD_ALIASES</code> for backwards compat.</p>
 
         <p>Pickle via the same to_dict / from_dict path used for JSON so
 pickled objects round-trip even when field order or internal
-representation changes between releases.</p>
+representation changes between releases. Pickles written before
+serializable 1.2.0 call from_serializable_repr instead, which remains
+supported.</p>
 
 
     </div>
@@ -1203,8 +1205,10 @@ of a derived class (typically by matching args to <strong>init</strong>). The va
 of the returned dictionary must be primitive atomic types
 (bool, string, int, float), primitive collections
 (int, list, tuple, set) or instances of Serializable.</p>
-<p>The default implementation is to assume all the arguments to <strong>init</strong>
-have fields of the same name on a serializable object.</p>
+<p>The default implementation is to assume all the positional arguments
+to <strong>init</strong> have fields of the same name on a serializable object.
+Keyword-only arguments are excluded, so they can be used for
+constructor options which aren't part of the serialized state.</p>
 
 
     </div>
@@ -1229,7 +1233,7 @@ have fields of the same name on a serializable object.</p>
     <div class="doc doc-contents ">
 
         <p>Given a dictionary of flattened fields (result of calling to_dict()),
-returns an instance.</p>
+returns an instance. Does not modify <code>state_dict</code>.</p>
 
 
     </div>
@@ -1338,7 +1342,11 @@ returns an instance.</p>
     <div class="doc doc-contents ">
 
         <p>Overriding this method directs the default pickler to reconstruct
-this object using our from_dict method.</p>
+this object using our from_dict method, so pickles survive the same
+changes to a class (e.g. renamed keywords) as JSON does. Values in
+to_dict() are pickled natively.</p>
+<p>Pickles written before serializable 1.2.0 call from_serializable_repr
+instead, which remains supported.</p>
 
 
     </div>
@@ -1412,6 +1420,9 @@ other primitive object.</p>
 
     <div class="doc doc-contents first">
 
+        <p>Inverse of to_json. Objects are reconstructed bottom-up while parsing,
+equivalent to (but faster than) from_serializable_repr(json.loads(...)).</p>
+
 
     </div>
 
@@ -1450,6 +1461,8 @@ such instances into serializable types.</p>
 </code></pre></div>
 
     <div class="doc doc-contents first">
+
+        <p>Inverse of to_serializable_repr. Does not modify <code>x</code>.</p>
 
 
     </div>
