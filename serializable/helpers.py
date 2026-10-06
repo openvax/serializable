@@ -15,36 +15,42 @@ Helper functions for deconstructing classes, functions, and user-defined
 objects into serializable types.
 """
 
+from functools import lru_cache
 from types import BuiltinFunctionType, FunctionType
 
 import simplejson as json
 
-from .primitive_types import return_primitive
+from .primitive_types import PRIMITIVE_TYPES
 
 
 def init_arg_names(obj):
     """
-    Names of arguments to __init__ method of this object's class.
-    """
-    # doing something wildly hacky by pulling out the arguments to
-    # __init__ or __new__ and hoping that they match fields defined on the
-    # object
-    try:
-        init_code = obj.__init__.__func__.__code__
-    except AttributeError:
-        try:
-            init_code = obj.__new__.__func__.__code__
-        except AttributeError as exc:
-            # if object is a namedtuple then we can return its fields
-            # as the required initial args
-            if hasattr(obj, "_fields"):
-                return obj._fields
-            raise ValueError(f"Cannot determine args to {obj}.__init__") from exc
+    Names of the positional arguments to the __init__ method of this
+    object's class (excluding self).
 
-    arg_names = init_code.co_varnames[: init_code.co_argcount]
+    Keyword-only arguments are deliberately excluded, so a class can accept
+    constructor options which aren't part of its serialized state.
+    """
+    return _class_init_arg_names(type(obj))
+
+
+# Cached per class since this is called on every to_dict/__eq__/__hash__ of
+# a Serializable which doesn't override to_dict. Assumes a class's __init__
+# isn't replaced after its first instance has been serialized.
+@lru_cache(maxsize=1024)
+def _class_init_arg_names(cls):
+    # doing something wildly hacky by pulling out the arguments to
+    # __init__ and hoping that they match fields defined on the object
+    try:
+        init_code = cls.__init__.__code__
+    except AttributeError as exc:
+        # if object is a namedtuple then we can return its fields
+        # as the required initial args
+        if hasattr(cls, "_fields"):
+            return cls._fields
+        raise ValueError(f"Cannot determine args to {cls.__qualname__}.__init__") from exc
     # drop self argument
-    nonself_arg_names = arg_names[1:]
-    return nonself_arg_names
+    return init_code.co_varnames[1 : init_code.co_argcount]
 
 
 def simple_object_to_dict(self):
@@ -185,10 +191,12 @@ def dict_to_serializable_repr(x):
     return result
 
 
-def from_serializable_dict(x):
+def _from_reconstructed_dict(x):
     """
-    Reconstruct a dictionary by recursively reconstructing all its keys and
-    values.
+    Given a dictionary from a serializable representation whose values have
+    already been reconstructed, return the object it represents: a class or
+    function, an instance of a user-defined class, or a dictionary (restoring
+    any non-string keys). May modify `x`.
 
     This is the most hackish part since we rely on key names such as
     __name__, __class__, __module__ as metadata about how to reconstruct
@@ -200,26 +208,38 @@ def from_serializable_dict(x):
         flattened result of to_dict() for user-defined objects.
     """
     if "__name__" in x:
-        return _lookup_value(x.pop("__module__"), x.pop("__name__"))
+        return _lookup_value(x["__module__"], x["__name__"])
 
-    non_string_key_objects = [
-        from_json(serialized_key) for serialized_key in x.pop(SERIALIZED_DICTIONARY_KEYS_FIELD, [])
-    ]
+    serialized_keys = x.pop(SERIALIZED_DICTIONARY_KEYS_FIELD, None)
+    if serialized_keys:
+        non_string_key_objects = [from_json(serialized_key) for serialized_key in serialized_keys]
+        converted_dict = type(x)()
+        for k, v in x.items():
+            serialized_key_index = parse_serialized_keys_index(k)
+            if serialized_key_index is not None:
+                k = non_string_key_objects[serialized_key_index]
+            converted_dict[k] = v
+        x = converted_dict
+
+    if "__class__" not in x:
+        return x
+    class_object = x.pop("__class__")
+    if "__value__" in x:
+        return class_object(x["__value__"])
+    if hasattr(class_object, "from_dict"):
+        return class_object.from_dict(x)
+    return class_object(**x)
+
+
+def from_serializable_dict(x):
+    """
+    Reconstruct a dictionary, or the object it represents, by recursively
+    reconstructing all its keys and values. Does not modify `x`.
+    """
     converted_dict = type(x)()
     for k, v in x.items():
-        serialized_key_index = parse_serialized_keys_index(k)
-        if serialized_key_index is not None:
-            k = non_string_key_objects[serialized_key_index]
-
         converted_dict[k] = from_serializable_repr(v)
-    if "__class__" in converted_dict:
-        class_object = converted_dict.pop("__class__")
-        if "__value__" in converted_dict:
-            return class_object(converted_dict["__value__"])
-        if hasattr(class_object, "from_dict"):
-            return class_object.from_dict(converted_dict)
-        return class_object(**converted_dict)
-    return converted_dict
+    return _from_reconstructed_dict(converted_dict)
 
 
 def list_to_serializable_repr(x):
@@ -242,12 +262,13 @@ def to_dict(obj):
         raise ValueError(f"Cannot convert {obj} : {type(obj)} to dictionary") from exc
 
 
-@return_primitive
 def to_serializable_repr(x):
     """
     Convert an instance of Serializable or a primitive collection containing
     such instances into serializable types.
     """
+    if isinstance(x, PRIMITIVE_TYPES):
+        return x
     t = type(x)
     if isinstance(x, list):
         return list_to_serializable_repr(x)
@@ -267,8 +288,12 @@ def to_serializable_repr(x):
     return state_dictionary
 
 
-@return_primitive
 def from_serializable_repr(x):
+    """
+    Inverse of to_serializable_repr. Does not modify `x`.
+    """
+    if isinstance(x, PRIMITIVE_TYPES):
+        return x
     t = type(x)
     if isinstance(x, list):
         return t([from_serializable_repr(element) for element in x])
@@ -286,4 +311,8 @@ def to_json(x):
 
 
 def from_json(json_string):
-    return from_serializable_repr(json.loads(json_string))
+    """
+    Inverse of to_json. Objects are reconstructed bottom-up while parsing,
+    equivalent to (but faster than) from_serializable_repr(json.loads(...)).
+    """
+    return json.loads(json_string, object_hook=_from_reconstructed_dict)

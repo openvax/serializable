@@ -43,7 +43,7 @@ from __future__ import annotations
 from dataclasses import fields
 from typing import Any, ClassVar
 
-from .helpers import from_json, from_serializable_repr, to_json, to_serializable_repr
+from .helpers import from_json, to_json
 
 
 class DataclassSerializable:
@@ -89,5 +89,7 @@ class DataclassSerializable:
     def __reduce__(self):
         """Pickle via the same to_dict / from_dict path used for JSON so
         pickled objects round-trip even when field order or internal
-        representation changes between releases."""
-        return (from_serializable_repr, (to_serializable_repr(self),))
+        representation changes between releases. Pickles written before
+        serializable 1.2.0 call from_serializable_repr instead, which remains
+        supported."""
+        return (type(self).from_dict, (self.to_dict(),))

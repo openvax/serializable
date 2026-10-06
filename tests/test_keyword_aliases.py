@@ -96,3 +96,10 @@ def test_renamed_keyword_inheritance():
     eq_(obj.y, 2)
     assert not hasattr(obj, "old_x")
     assert not hasattr(obj, "old_y")
+
+
+def test_from_dict_does_not_modify_input():
+    d = {"old_x": 1, "old_gone": 2}
+    obj = TestClassWithKeywordAliases.from_dict(d)
+    eq_(obj.x, 1)
+    eq_(d, {"old_x": 1, "old_gone": 2})

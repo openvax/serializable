@@ -1,4 +1,13 @@
-from serializable import Serializable, from_serializable_repr, to_serializable_repr
+import copy
+import json
+
+from serializable import (
+    Serializable,
+    from_json,
+    from_serializable_repr,
+    to_json,
+    to_serializable_repr,
+)
 
 from .common import eq_
 
@@ -42,3 +51,27 @@ def test_object_with_dict_values():
 def test_object_with_set_values():
     x = B()
     eq_(x, from_serializable_repr(to_serializable_repr(x)))
+
+
+nested = {
+    (1, 2): [A(1), B()],
+    "class": A,
+    "inner": {"t": (A({(3,): {4}}),), 5: "int key"},
+}
+
+
+def test_from_serializable_repr_does_not_modify_input():
+    serialized = to_serializable_repr(nested)
+    snapshot = copy.deepcopy(serialized)
+    eq_(nested, from_serializable_repr(serialized))
+    eq_(serialized, snapshot)
+    # decoding the same representation twice used to fail
+    eq_(nested, from_serializable_repr(serialized))
+
+
+def test_from_json_matches_from_serializable_repr():
+    # from_json reconstructs objects while parsing; it must agree with
+    # decoding the parsed JSON in a separate pass
+    json_string = to_json(nested)
+    eq_(nested, from_json(json_string))
+    eq_(from_json(json_string), from_serializable_repr(json.loads(json_string)))
