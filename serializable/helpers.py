@@ -17,11 +17,10 @@ objects into serializable types.
 
 from __future__ import annotations
 
+import json
 from functools import lru_cache
 from types import BuiltinFunctionType, FunctionType
 from typing import Any, Union
-
-import simplejson as json  # type: ignore[import-untyped]
 
 from .primitive_types import PRIMITIVE_TYPES
 
@@ -310,13 +309,19 @@ def to_json(x: Any) -> str:
     """
     Returns JSON representation of a given Serializable instance or
     other primitive object.
+
+    Raises ValueError for NaN or infinite floats, which have no standard
+    JSON representation.
     """
-    return json.dumps(to_serializable_repr(x))
+    return json.dumps(to_serializable_repr(x), allow_nan=False)
 
 
 def from_json(json_string: Union[str, bytes]) -> Any:
     """
     Inverse of to_json. Objects are reconstructed bottom-up while parsing,
     equivalent to (but faster than) from_serializable_repr(json.loads(...)).
+
+    Accepts the NaN and Infinity literals which older versions of
+    serializable wrote.
     """
     return json.loads(json_string, object_hook=_from_reconstructed_dict)

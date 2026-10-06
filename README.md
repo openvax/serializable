@@ -55,6 +55,9 @@ If you change the keyword arguments to a class which derives from `Serializable`
 The format records Python classes and modules, which must remain importable when
 loading data. Keys starting with two underscores are reserved. Nested Python
 values require the serialization helpers rather than ordinary JSON encoding.
+`to_json` raises `ValueError` for NaN or infinite floats, which standard JSON
+can't represent; `from_json` still reads the `NaN` / `Infinity` literals which
+older versions wrote.
 
 ## Documentation
 
