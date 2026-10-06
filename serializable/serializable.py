@@ -24,7 +24,7 @@ from .helpers import (
 
 class Serializable:
     """
-    Base class for all PyEnsembl objects which provides default
+    Base class for user-defined objects which provides default
     methods such as to_json, from_json, __reduce__, and from_dict
 
     Relies on the following condition:
@@ -78,7 +78,7 @@ class Serializable:
         Rename any old keyword arguments to preserve backwards compatibility
         """
         # check every class in the inheritance chain for its own
-        # definition of _KEYWORD_ALIASES
+        # definition of _SERIALIZABLE_KEYWORD_ALIASES
         for klass in cls.mro():
             keyword_rename_dict = getattr(klass, "_SERIALIZABLE_KEYWORD_ALIASES", {})
             for old_name, new_name in keyword_rename_dict.items():
@@ -99,7 +99,7 @@ class Serializable:
 
     def to_json(self):
         """
-        Returns a string containing a JSON representation of this Genome.
+        Returns a string containing a JSON representation of this object.
         """
         return to_json(self)
 
@@ -112,8 +112,7 @@ class Serializable:
 
     def write_json_file(self, path):
         """
-        Serialize this VariantCollection to a JSON representation and write it
-        out to a text file.
+        Serialize this object to JSON and write it to the text file at `path`.
         """
         with open(path, "w") as f:
             f.write(self.to_json())
@@ -121,7 +120,7 @@ class Serializable:
     @classmethod
     def read_json_file(cls, path):
         """
-        Construct a VariantCollection from a JSON file.
+        Construct an instance of this class from the JSON file at `path`.
         """
         with open(path) as f:
             json_string = f.read()

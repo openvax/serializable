@@ -44,3 +44,9 @@ def test_object_to_json():
 
 def test_object_pickle():
     eq_(instance, pickle.loads(pickle.dumps(instance)))
+
+
+def test_object_json_file(tmp_path):
+    path = tmp_path / "instance.json"
+    instance.write_json_file(path)
+    eq_(instance, A.read_json_file(path))
