@@ -22,6 +22,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Typing :: Typed",
 ]
 requires-python = ">=3.9"
 dependencies = [
@@ -34,6 +37,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "ruff",
+    "mypy",
     "coveralls",
     "build",
     "twine",
@@ -48,6 +52,9 @@ version = {attr = "serializable.version.__version__"}
 
 [tool.setuptools.packages.find]
 include = ["serializable*"]
+
+[tool.setuptools.package-data]
+serializable = ["py.typed"]
 
 [tool.ruff]
 target-version = "py39"
@@ -81,6 +88,7 @@ ignore = [
     "B905",   # zip() without explicit strict
     "SIM108", # use ternary operator instead of if-else
     "UP007",  # use X | Y for type unions (need Python 3.10+)
+    "UP045",  # use X | None for Optional (need Python 3.10+)
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -95,6 +103,11 @@ ignore = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["serializable"]
+
+[tool.mypy]
+# Annotations are never evaluated at runtime (`from __future__ import annotations`),
+# so checking them as 3.10 also covers 3.9, which mypy 2 can no longer target.
+python_version = "3.10"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
