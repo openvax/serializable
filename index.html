@@ -733,6 +733,9 @@ and objects implementing the serialization interface. Dictionary keys beginning
 with two underscores are reserved by the format. <code>to_dict()</code> is the object's
 field mapping; it does not by itself guarantee an ordinary JSON-compatible
 mapping when those fields contain nested Python objects.</p>
+<p>Floats must be finite: <code>to_json()</code> raises <code>ValueError</code> for NaN or infinity,
+which standard JSON can't represent. <code>from_json()</code> still reads the <code>NaN</code> and
+<code>Infinity</code> literals which older versions wrote.</p>
 
 
 

@@ -1401,6 +1401,8 @@ data matching each required arg of <strong>init</strong>.</p>
 
         <p>Returns JSON representation of a given Serializable instance or
 other primitive object.</p>
+<p>Raises ValueError for NaN or infinite floats, which have no standard
+JSON representation.</p>
 
 
     </div>
@@ -1422,6 +1424,8 @@ other primitive object.</p>
 
         <p>Inverse of to_json. Objects are reconstructed bottom-up while parsing,
 equivalent to (but faster than) from_serializable_repr(json.loads(...)).</p>
+<p>Accepts the NaN and Infinity literals which older versions of
+serializable wrote.</p>
 
 
     </div>
