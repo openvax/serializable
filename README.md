@@ -8,18 +8,11 @@
 
 Base class with serialization methods for user-defined Python objects
 
-## Usage
+## Install
 
-Classes which inherit from `Serializable` are enabled with default implementations of
-`to_json`, `from_json`, `__reduce__` (for pickling), and other serialization
-helpers.
-
-A derived class must either:
-
-- have a member data matching the name of each argument to `__init__`
-- provide a user-defined `to_dict()` method which returns a dictionary whose keys match the arguments to `__init__`
-
-If you change the keyword arguments to a class which derives from `Serializable` but would like to be able to deserialize older JSON representations then you can define a class-level dictionary called `_KEYWORD_ALIASES` which maps old keywords to new names (or `None` if a keyword was removed).
+```sh
+python -m pip install serializable
+```
 
 ## `DataclassSerializable` for `@dataclass` subclasses
 
@@ -40,8 +33,31 @@ assert Point.from_json(p.to_json()) == p
 
 The on-wire JSON format is identical to `Serializable`, so mixed codebases interoperate: a `DataclassSerializable` instance can reference a legacy `Serializable` object (and vice versa) and still round-trip cleanly. The `_SERIALIZABLE_KEYWORD_ALIASES` hook works the same way for migrating field names across releases.
 
+## Usage
+
+Classes which inherit from `Serializable` are enabled with default implementations of
+`to_json`, `from_json`, `__reduce__` (for pickling), and other serialization
+helpers.
+
+A derived class must either:
+
+- have a member data matching the name of each argument to `__init__`
+- provide a user-defined `to_dict()` method which returns a dictionary whose keys match the arguments to `__init__`
+
+If you change the keyword arguments to a class which derives from `Serializable` but would like to be able to deserialize older JSON representations then you can define a class-level dictionary called `_SERIALIZABLE_KEYWORD_ALIASES` which maps old keywords to new names (or `None` if a keyword was removed).
+
 ## Limitations
 
-- Serializable objects must inherit from `Serializable`, be tuples or namedtuples, be serializble primitive types such as dict, list, int, float, or str.
+The format records Python classes and modules, which must remain importable when
+loading data. Keys starting with two underscores are reserved. Nested Python
+values require the serialization helpers rather than ordinary JSON encoding.
 
-- The serialized representation of objects relies on reserved keywords (such as `"__name__"`, and `"__class__"`), so dictionaries are expected to not contain any keys which begin with two underscores.
+## Documentation
+
+- [Save classes, files and nested objects](docs/guides/objects.md)
+- [Migrate field names](docs/guides/migration.md)
+- [API reference](docs/reference.md)
+- [Writing and checking docs](docs/dev/documentation-style.md)
+
+The site builds with `python -m pip install -r requirements-docs.txt` followed
+by `./docs.sh`. Run `python scripts/check_docs_examples.py` to check the examples.

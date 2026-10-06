@@ -1,0 +1,53 @@
+site_name: serializable
+site_description: Save and reconstruct Python objects as JSON
+site_url: https://openvax.github.io/serializable/
+repo_url: https://github.com/openvax/serializable
+repo_name: openvax/serializable
+edit_uri: edit/master/docs/
+strict: true
+theme:
+  name: material
+  font: false
+  palette:
+    primary: white
+    accent: blue
+  features:
+  - navigation.indexes
+  - navigation.expand
+  - content.code.copy
+validation:
+  links:
+    not_found: warn
+    unrecognized_links: warn
+    anchors: warn
+plugins:
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        paths:
+        - .
+        options:
+          docstring_style: numpy
+          show_root_heading: true
+          show_root_full_path: false
+          show_source: false
+          separate_signature: true
+          heading_level: 2
+          docstring_section_style: list
+          members_order: source
+markdown_extensions:
+- tables
+- toc:
+    permalink: true
+- pymdownx.superfences
+extra_css:
+- stylesheets/docs.css
+nav:
+- Home: index.md
+- Common tasks:
+  - Save classes and files: guides/objects.md
+  - Change field names: guides/migration.md
+- API reference: reference.md
+- Contributing:
+  - Documentation style: dev/documentation-style.md
