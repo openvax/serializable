@@ -11,9 +11,15 @@
 # limitations under the License.
 
 
-from typing import ClassVar
+from __future__ import annotations
+
+import os
+from collections.abc import Mapping
+from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from .helpers import from_json, simple_object_to_dict, to_json
+
+_T = TypeVar("_T", bound="Serializable")
 
 
 class Serializable:
@@ -24,17 +30,17 @@ class Serializable:
     Relies on the keys of to_dict() matching the arguments to __init__.
     """
 
-    def __str__(self):
+    def __str__(self) -> str:
         fields = ", ".join(f"{k}={v}" for (k, v) in self.to_dict().items())
         return f"{self.__class__.__name__}({fields})"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return str(self)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.__class__ is other.__class__ and self.to_dict() == other.to_dict()
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         """
         Returns a dictionary which can be used to reconstruct an instance
         of a derived class (typically by matching args to __init__). The values
@@ -49,11 +55,11 @@ class Serializable:
         """
         return simple_object_to_dict(self)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(tuple(sorted(self.to_dict().items())))
 
     @classmethod
-    def _reconstruct_nested_objects(cls, state_dict):
+    def _reconstruct_nested_objects(cls, state_dict: dict[str, Any]) -> dict[str, Any]:
         """
         Nested serializable objects will be represented as dictionaries so we
         allow manual reconstruction of those objects in this method.
@@ -64,10 +70,10 @@ class Serializable:
 
     # dictionary mapping old keywords to either new names or
     # None if the keyword has been removed from a class
-    _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict] = {}
+    _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict[str, Optional[str]]] = {}
 
     @classmethod
-    def _update_kwargs(cls, kwargs):
+    def _update_kwargs(cls, kwargs: dict[str, Any]) -> dict[str, Any]:
         """
         Rename any old keyword arguments to preserve backwards compatibility
         """
@@ -83,7 +89,7 @@ class Serializable:
         return kwargs
 
     @classmethod
-    def from_dict(cls, state_dict):
+    def from_dict(cls: type[_T], state_dict: Mapping[str, Any]) -> _T:
         """
         Given a dictionary of flattened fields (result of calling to_dict()),
         returns an instance. Does not modify `state_dict`.
@@ -91,20 +97,20 @@ class Serializable:
         state_dict = cls._reconstruct_nested_objects(dict(state_dict))
         return cls(**cls._update_kwargs(state_dict))
 
-    def to_json(self):
+    def to_json(self) -> str:
         """
         Returns a string containing a JSON representation of this object.
         """
         return to_json(self)
 
     @classmethod
-    def from_json(cls, json_string):
+    def from_json(cls: type[_T], json_string: str) -> _T:
         """
         Reconstruct an instance from a JSON string.
         """
         return from_json(json_string)
 
-    def write_json_file(self, path):
+    def write_json_file(self, path: Union[str, os.PathLike[str]]) -> None:
         """
         Serialize this object to JSON and write it to the text file at `path`.
         """
@@ -112,7 +118,7 @@ class Serializable:
             f.write(self.to_json())
 
     @classmethod
-    def read_json_file(cls, path):
+    def read_json_file(cls: type[_T], path: Union[str, os.PathLike[str]]) -> _T:
         """
         Construct an instance of this class from the JSON file at `path`.
         """
@@ -120,7 +126,7 @@ class Serializable:
             json_string = f.read()
         return cls.from_json(json_string)
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[Any, ...]:
         """
         Overriding this method directs the default pickler to reconstruct
         this object using our from_dict method, so pickles survive the same

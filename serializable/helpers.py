@@ -15,15 +15,18 @@ Helper functions for deconstructing classes, functions, and user-defined
 objects into serializable types.
 """
 
+from __future__ import annotations
+
 from functools import lru_cache
 from types import BuiltinFunctionType, FunctionType
+from typing import Any, Union
 
-import simplejson as json
+import simplejson as json  # type: ignore[import-untyped]
 
 from .primitive_types import PRIMITIVE_TYPES
 
 
-def init_arg_names(obj):
+def init_arg_names(obj: Any) -> tuple[str, ...]:
     """
     Names of the positional arguments to the __init__ method of this
     object's class (excluding self).
@@ -31,7 +34,8 @@ def init_arg_names(obj):
     Keyword-only arguments are deliberately excluded, so a class can accept
     constructor options which aren't part of its serialized state.
     """
-    return _class_init_arg_names(type(obj))
+    # mypy doesn't consider classes Hashable
+    return _class_init_arg_names(type(obj))  # type: ignore[arg-type]
 
 
 # Cached per class since this is called on every to_dict/__eq__/__hash__ of
@@ -53,7 +57,7 @@ def _class_init_arg_names(cls):
     return init_code.co_varnames[1 : init_code.co_argcount]
 
 
-def simple_object_to_dict(self):
+def simple_object_to_dict(self: object) -> dict[str, Any]:
     return {name: getattr(self, name) for name in init_arg_names(self)}
 
 
@@ -246,7 +250,7 @@ def list_to_serializable_repr(x):
     return [to_serializable_repr(element) for element in x]
 
 
-def to_dict(obj):
+def to_dict(obj: Any) -> dict[str, Any]:
     """
     If value isn't a primitive scalar or collection then it needs to
     either implement to_dict (instances of Serializable) or have member
@@ -262,7 +266,7 @@ def to_dict(obj):
         raise ValueError(f"Cannot convert {obj} : {type(obj)} to dictionary") from exc
 
 
-def to_serializable_repr(x):
+def to_serializable_repr(x: Any) -> Any:
     """
     Convert an instance of Serializable or a primitive collection containing
     such instances into serializable types.
@@ -288,7 +292,7 @@ def to_serializable_repr(x):
     return state_dictionary
 
 
-def from_serializable_repr(x):
+def from_serializable_repr(x: Any) -> Any:
     """
     Inverse of to_serializable_repr. Does not modify `x`.
     """
@@ -302,7 +306,7 @@ def from_serializable_repr(x):
     raise TypeError(f"Cannot convert {x} : {type(x)} from serializable representation to object")
 
 
-def to_json(x):
+def to_json(x: Any) -> str:
     """
     Returns JSON representation of a given Serializable instance or
     other primitive object.
@@ -310,7 +314,7 @@ def to_json(x):
     return json.dumps(to_serializable_repr(x))
 
 
-def from_json(json_string):
+def from_json(json_string: Union[str, bytes]) -> Any:
     """
     Inverse of to_json. Objects are reconstructed bottom-up while parsing,
     equivalent to (but faster than) from_serializable_repr(json.loads(...)).

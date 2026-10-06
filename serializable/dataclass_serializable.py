@@ -40,10 +40,13 @@ Example::
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import fields
-from typing import Any, ClassVar
+from typing import Any, ClassVar, Optional, TypeVar
 
 from .helpers import from_json, to_json
+
+_T = TypeVar("_T", bound="DataclassSerializable")
 
 
 class DataclassSerializable:
@@ -57,16 +60,17 @@ class DataclassSerializable:
     ``Serializable``.
     """
 
-    _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict[str, str | None]] = {}
+    _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict[str, Optional[str]]] = {}
 
     def to_dict(self) -> dict[str, Any]:
         """Return a dict mapping each dataclass field name to its current
         value. Keys match the ``__init__`` keyword arguments, so
         ``cls(**obj.to_dict())`` reconstructs an equal instance."""
-        return {f.name: getattr(self, f.name) for f in fields(self)}
+        # subclasses are dataclasses, the mixin itself isn't
+        return {f.name: getattr(self, f.name) for f in fields(self)}  # type: ignore[arg-type]
 
     @classmethod
-    def from_dict(cls, state_dict: dict[str, Any]):
+    def from_dict(cls: type[_T], state_dict: Mapping[str, Any]) -> _T:
         """Reconstruct an instance from a ``to_dict``-shaped dictionary,
         applying ``_SERIALIZABLE_KEYWORD_ALIASES`` for backwards compat."""
         kwargs = dict(state_dict)
@@ -83,10 +87,10 @@ class DataclassSerializable:
         return to_json(self)
 
     @classmethod
-    def from_json(cls, json_string: str):
+    def from_json(cls: type[_T], json_string: str) -> _T:
         return from_json(json_string)
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple[Any, ...]:
         """Pickle via the same to_dict / from_dict path used for JSON so
         pickled objects round-trip even when field order or internal
         representation changes between releases. Pickles written before
