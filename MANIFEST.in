@@ -1,0 +1,4 @@
+# setuptools only adds tests/test*.py to the sdist by default; ship the whole
+# suite (tests/__init__.py, tests/common.py) so tests run from the tarball.
+graft tests
+global-exclude *.py[cod]

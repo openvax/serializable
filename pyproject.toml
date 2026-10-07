@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -37,7 +37,6 @@ dev = [
     "pytest-cov",
     "ruff",
     "mypy",
-    "coveralls",
     "build",
     "twine",
 ]
