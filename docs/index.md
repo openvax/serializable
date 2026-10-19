@@ -10,7 +10,7 @@ classes whose constructor arguments describe their state.
 python -m pip install serializable
 ```
 
-Python 3.9 or later is required.
+Python 3.11 or later is required.
 
 ## Save and reload an object
 
