@@ -61,7 +61,8 @@ def simple_object_to_dict(self: object) -> dict[str, Any]:
     Map each positional __init__ argument name of an object's class to the
     attribute of the same name. This is Serializable's default to_dict.
 
-    Raises AttributeError if the object has no attribute for an argument.
+    Raises AttributeError if the object has no attribute for an argument, and
+    ValueError if its class's __init__ arguments can't be determined.
     """
     return {name: getattr(self, name) for name in init_arg_names(self)}
 

@@ -150,3 +150,23 @@ def test_both_base_classes_treat_an_empty_alias_as_removed():
         {"x": 1, "legacy": 2}
     ) == SerializableWithEmptyAlias(x=1)
     assert DataclassWithEmptyAlias.from_dict({"x": 1, "legacy": 2}) == DataclassWithEmptyAlias(x=1)
+
+
+class ClassOverridingUpdateKwargs(TestClassWithKeywordAliases):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    @classmethod
+    def _update_kwargs(cls, kwargs):
+        kwargs = super()._update_kwargs(kwargs)
+        kwargs.setdefault("y", "filled in by override")
+        return kwargs
+
+
+def test_from_dict_still_calls_an_overridden_update_kwargs():
+    # _update_kwargs is kept as a hook: an override runs in from_dict and can
+    # still apply the inherited aliases through super().
+    obj = ClassOverridingUpdateKwargs.from_dict({"old_x": 1})
+    eq_(obj.x, 1)
+    eq_(obj.y, "filled in by override")
