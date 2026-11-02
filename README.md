@@ -1,12 +1,19 @@
-[![Tests](https://github.com/openvax/serializable/actions/workflows/tests.yml/badge.svg)](https://github.com/openvax/serializable/actions/workflows/tests.yml)
-<a href="https://pypi.python.org/pypi/serializable/">
-<img src="https://img.shields.io/pypi/v/serializable.svg?maxAge=1000" alt="PyPI" />
-</a>
+[![Tests](https://github.com/openvax/serializable/actions/workflows/tests.yml/badge.svg?branch=master)](https://github.com/openvax/serializable/actions/workflows/tests.yml)
+[![Documentation](https://github.com/openvax/serializable/actions/workflows/documentation.yml/badge.svg?branch=master)](https://openvax.github.io/serializable/)
+[![PyPI](https://img.shields.io/pypi/v/serializable.svg)](https://pypi.org/project/serializable/)
 [![PyPI downloads](https://img.shields.io/pypi/dm/serializable.svg)](https://pypistats.org/packages/serializable)
 
 # serializable
 
-Base class with serialization methods for user-defined Python objects
+serializable saves Python objects as JSON or pickles and reconstructs the same
+classes, including nested objects. Subclass `DataclassSerializable` for a
+dataclass, or `Serializable` for a class whose constructor arguments describe
+its state. It is the serialization layer of the OpenVax libraries:
+[varcode](https://github.com/openvax/varcode) and
+[vaxrank](https://github.com/openvax/vaxrank) results,
+[pyensembl](https://github.com/openvax/pyensembl) genomes and
+[sercol](https://github.com/openvax/sercol) collections all save and reload
+through it.
 
 ## Install
 
@@ -16,9 +23,7 @@ python -m pip install serializable
 
 Python 3.11 or later is required.
 
-## `DataclassSerializable` for `@dataclass` subclasses
-
-If you're using `@dataclass` (e.g. in `vaxrank`, `pyensembl`, or `varcode`), inherit from `DataclassSerializable` instead of `Serializable`. It provides the same serialization surface — `to_dict` / `from_dict` / `to_json` / `from_json` — but leaves `__init__`, `__eq__`, `__repr__`, and `__hash__` to `@dataclass`, so you get dataclass-native equality and repr without conflicts.
+## Quick start
 
 ```python
 from dataclasses import dataclass
@@ -29,47 +34,37 @@ class Point(DataclassSerializable):
     x: float
     y: float
 
-p = Point(1.0, 2.0)
-assert Point.from_json(p.to_json()) == p
+point = Point(1.0, 2.0)
+restored = Point.from_json(point.to_json())
+print(point.to_dict())
+print(restored)
+print(restored == point)
 ```
 
-The on-wire JSON format is identical to `Serializable`, so mixed codebases interoperate: a `DataclassSerializable` instance can reference a legacy `Serializable` object (and vice versa) and still round-trip cleanly. The `_SERIALIZABLE_KEYWORD_ALIASES` hook works the same way for migrating field names across releases.
+```text
+{'x': 1.0, 'y': 2.0}
+Point(x=1.0, y=2.0)
+True
+```
 
-## Usage
-
-Classes which inherit from `Serializable` are enabled with default implementations of
-`to_json`, `from_json`, `__reduce__` (for pickling), and other serialization
-helpers.
-
-A derived class must either:
-
-- have a member data matching the name of each positional argument to `__init__`
-- provide a user-defined `to_dict()` method which returns a dictionary whose keys match the arguments to `__init__`
-
-Keyword-only arguments to `__init__` (those after `*`) are left out of the default `to_dict()`, so they can be used for constructor options which aren't part of an object's serialized state.
-
-Pickling goes through the same `to_dict()` / `from_dict()` pair, so pickles also survive renamed keywords (see below). Pickles written by versions before 1.2.0 can still be loaded.
-
-If you change the keyword arguments to a class which derives from `Serializable` but would like to be able to deserialize older JSON representations then you can define a class-level dictionary called `_SERIALIZABLE_KEYWORD_ALIASES` which maps old keywords to new names (or `None` if a keyword was removed).
-
-## Limitations
-
-The format records Python classes and modules, which must remain importable when
-loading data. Keys starting with two underscores are reserved. Nested Python
-values require the serialization helpers rather than ordinary JSON encoding.
-`to_json` raises `ValueError` for NaN or infinite floats, which standard JSON
-can't represent; `from_json` still reads the `NaN` / `Infinity` literals which
-older versions wrote.
+`to_dict()` gives the constructor fields; `to_json()` also records the class
+and its module so `from_json()` can rebuild it. The dataclass keeps its own
+generated constructor, equality and representation. The recorded module and
+class must be importable when loading, so load data only from sources you
+trust.
 
 ## Documentation
 
-- [Save classes, files and nested objects](docs/guides/objects.md)
-- [Migrate field names](docs/guides/migration.md)
-- [API reference](docs/reference.md)
-- [Writing and checking docs](docs/dev/documentation-style.md)
+The [documentation](https://openvax.github.io/serializable/) covers, in
+reading order:
 
-The site builds with `python -m pip install -r requirements-docs.txt` followed
-by `./docs.sh`. Run `python scripts/check_docs_examples.py` to check the examples.
+1. [Getting started](https://openvax.github.io/serializable/): the example
+   above, choosing a base class, and the format's limits.
+2. [Save classes and files](https://openvax.github.io/serializable/guides/objects/):
+   constructor-based classes, JSON files, pickles and nested containers.
+3. [Change field names](https://openvax.github.io/serializable/guides/migration/):
+   read data written before a constructor argument was renamed.
+4. [API reference](https://openvax.github.io/serializable/reference/).
 
 ## Development
 
@@ -78,8 +73,14 @@ python -m pip install -e ".[dev]"   # or ./develop.sh, which uses .venv
 ./format.sh   # ruff format
 ./lint.sh     # ruff check, ruff format --check and mypy
 ./test.sh     # pytest with coverage
+python -m pip install -r requirements-docs.txt
+./docs.sh     # mkdocs build --strict, then a rendered-link check
+python scripts/check_docs_examples.py   # run docs examples, compare output
 ```
+
+Every PR bumps `serializable/version.py`. Maintainers release with
+`./deploy.sh` from a clean `master`.
 
 ## License
 
-Apache 2.0; see [LICENSE](LICENSE).
+Apache 2.0; see [LICENSE](https://github.com/openvax/serializable/blob/master/LICENSE).

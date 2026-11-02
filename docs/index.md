@@ -1,8 +1,14 @@
 # serializable
 
-Save Python objects as JSON and reconstruct the same classes, including nested
-objects. Use `DataclassSerializable` for dataclasses and `Serializable` for
-classes whose constructor arguments describe their state.
+serializable saves Python objects as JSON or pickles and reconstructs the same
+classes, including nested objects. Subclass `DataclassSerializable` for a
+dataclass, or `Serializable` for a class whose constructor arguments describe
+its state. It is the serialization layer of the OpenVax libraries:
+[varcode](https://github.com/openvax/varcode) and
+[vaxrank](https://github.com/openvax/vaxrank) results,
+[pyensembl](https://github.com/openvax/pyensembl) genomes and
+[sercol](https://github.com/openvax/sercol) collections all save and reload
+through it.
 
 ## Install
 
@@ -48,6 +54,9 @@ normal generated constructor, equality and representation.
 | Serialize a constructor-based class | `Serializable` |
 | Serialize a nested collection of supported objects | `to_json()` / `from_json()` helpers |
 | Obtain constructor fields | `to_dict()` / `from_dict()` |
+
+Both base classes write the same JSON format, so a dataclass can hold a
+`Serializable` object, or the reverse, and the whole object still round-trips.
 
 See [save existing classes and files](guides/objects.md), then
 [change field names](guides/migration.md). The [API reference](reference.md)
