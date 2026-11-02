@@ -57,6 +57,12 @@ def _class_init_arg_names(cls):
 
 
 def simple_object_to_dict(self: object) -> dict[str, Any]:
+    """
+    Map each positional __init__ argument name of an object's class to the
+    attribute of the same name. This is Serializable's default to_dict.
+
+    Raises AttributeError if the object has no attribute for an argument.
+    """
     return {name: getattr(self, name) for name in init_arg_names(self)}
 
 
@@ -100,6 +106,9 @@ def class_from_serializable_representation(class_repr):
 
 
 def get_module_name(obj):
+    """
+    Name of the module where a class or function is defined (its __module__).
+    """
     module_name = obj.__module__
     return module_name
 
@@ -143,6 +152,11 @@ SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX = SERIALIZED_DICTIONARY_KEYS_FIELD + "
 
 
 def index_to_serialized_key_name(index):
+    """
+    Placeholder key, such as __serialized_keys__element_3, that stands for the
+    non-string dictionary key at this index of the serialized key list.
+    Inverse of parse_serialized_keys_index.
+    """
     return f"{SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX}{index:d}"
 
 
@@ -246,6 +260,10 @@ def from_serializable_dict(x):
 
 
 def list_to_serializable_repr(x):
+    """
+    Convert each element of a list (or other iterable) with to_serializable_repr,
+    returning a new list.
+    """
     return [to_serializable_repr(element) for element in x]
 
 

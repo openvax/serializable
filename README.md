@@ -14,6 +14,8 @@ Base class with serialization methods for user-defined Python objects
 python -m pip install serializable
 ```
 
+Python 3.11 or later is required.
+
 ## `DataclassSerializable` for `@dataclass` subclasses
 
 If you're using `@dataclass` (e.g. in `vaxrank`, `pyensembl`, or `varcode`), inherit from `DataclassSerializable` instead of `Serializable`. It provides the same serialization surface — `to_dict` / `from_dict` / `to_json` / `from_json` — but leaves `__init__`, `__eq__`, `__repr__`, and `__hash__` to `@dataclass`, so you get dataclass-native equality and repr without conflicts.
@@ -68,3 +70,16 @@ older versions wrote.
 
 The site builds with `python -m pip install -r requirements-docs.txt` followed
 by `./docs.sh`. Run `python scripts/check_docs_examples.py` to check the examples.
+
+## Development
+
+```sh
+python -m pip install -e ".[dev]"   # or ./develop.sh, which uses .venv
+./format.sh   # ruff format
+./lint.sh     # ruff check, ruff format --check and mypy
+./test.sh     # pytest with coverage
+```
+
+## License
+
+Apache 2.0; see [LICENSE](LICENSE).
