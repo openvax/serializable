@@ -44,7 +44,7 @@ True
 
 `to_dict()` describes constructor fields. `to_json()` also records the class
 and its module so `from_json()` can reconstruct it. The dataclass keeps its
-normal generated constructor, equality and representation.
+normal generated constructor, equality, representation and hashing.
 
 ## Choose a representation
 

@@ -49,7 +49,7 @@ True
 
 `to_dict()` gives the constructor fields; `to_json()` also records the class
 and its module so `from_json()` can rebuild it. The dataclass keeps its own
-generated constructor, equality and representation. The recorded module and
+generated constructor, equality, representation and hashing. The recorded module and
 class must be importable when loading, so load data only from sources you
 trust.
 
