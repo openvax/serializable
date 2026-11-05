@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -31,10 +31,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -480,6 +480,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializable.DataclassSerializable.to_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializable.DataclassSerializable.from_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#serializable.DataclassSerializable.__reduce__" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -649,6 +671,28 @@
     <span class="md-ellipsis">
       
         from_serializable_repr
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migrate-field-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrate field names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serializable.keyword_aliases.apply_keyword_aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        apply_keyword_aliases
       
     </span>
   </a>
@@ -823,6 +867,28 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#serializable.DataclassSerializable.to_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        to_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#serializable.DataclassSerializable.from_json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        from_json
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#serializable.DataclassSerializable.__reduce__" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -998,6 +1064,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#migrate-field-names" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Migrate field names
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#serializable.keyword_aliases.apply_keyword_aliases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        apply_keyword_aliases
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1109,6 +1197,50 @@ value. Keys match the <code>__init__</code> keyword arguments, so
 
         <p>Reconstruct an instance from a <code>to_dict</code>-shaped dictionary,
 applying <code>_SERIALIZABLE_KEYWORD_ALIASES</code> for backwards compat.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="serializable.DataclassSerializable.to_json" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_json</span>
+
+
+<a href="#serializable.DataclassSerializable.to_json" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_json</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a JSON string from which <code>from_json</code> rebuilds this object.</p>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="serializable.DataclassSerializable.from_json" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_json</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#serializable.DataclassSerializable.from_json" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_json</span><span class="p">(</span><span class="n">json_string</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Reconstruct an object from a string produced by <code>to_json</code>.</p>
 
 
     </div>
@@ -1471,6 +1603,66 @@ such instances into serializable types.</p>
 
     </div>
 
+</div><h2 id="migrate-field-names">Migrate field names<a class="headerlink" href="#migrate-field-names" title="Permanent link">&para;</a></h2>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="serializable.keyword_aliases.apply_keyword_aliases" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">apply_keyword_aliases</span>
+
+
+<a href="#serializable.keyword_aliases.apply_keyword_aliases" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">apply_keyword_aliases</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents first">
+
+        <p>Rename or drop old keyword arguments using a class's declared aliases.</p>
+<p>Every class in <code>cls</code>'s method resolution order contributes its
+<code>_SERIALIZABLE_KEYWORD_ALIASES</code>. For each <code>old_name -&gt; new_name</code> pair
+whose <code>old_name</code> is in <code>kwargs</code>, the old entry is removed. Its value is
+stored under <code>new_name</code> unless <code>new_name</code> is <code>None</code> or empty (the
+keyword was removed) or <code>kwargs</code> already has a value for <code>new_name</code>
+(the current name wins).</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>cls</code></b>
+              (<code><span title="type">type</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Class whose aliases apply, typically the class being reconstructed.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>kwargs</code></b>
+              (<code><span title="dict">dict</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Keyword arguments for <code>cls</code>'s constructor. Modified in place.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="dict">dict</span></code>
+          –
+          <div class="doc-md-description">
+            <p>The same <code>kwargs</code> object, updated.</p>
+          </div>
+        </li>
+    </ul>
+
+
+    </div>
+
 </div>
 
 
@@ -1521,10 +1713,10 @@ such instances into serializable types.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.indexes", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.indexes", "navigation.expand", "content.code.copy"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
