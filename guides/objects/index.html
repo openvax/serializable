@@ -665,6 +665,8 @@
 
 
 <h1 id="save-existing-classes-and-files">Save existing classes and files<a class="headerlink" href="#save-existing-classes-and-files" title="Permanent link">&para;</a></h1>
+<p>This guide covers classes that are not dataclasses, writing and reading JSON
+files, pickling, and saving containers of objects.</p>
 <h2 id="constructor-based-classes">Constructor-based classes<a class="headerlink" href="#constructor-based-classes" title="Permanent link">&para;</a></h2>
 <p>Inherit from <code>Serializable</code> when you already have a normal constructor. Store
 an attribute for each positional constructor argument, or implement <code>to_dict()</code>
