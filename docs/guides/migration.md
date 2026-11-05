@@ -30,3 +30,7 @@ Sample(name='new')
 The mapping changes constructor keywords; it does not migrate module names or
 class names recorded in JSON. Keep the recorded class importable, or provide
 an explicit application-level migration for stored representations.
+
+Both base classes apply the mapping with
+`serializable.keyword_aliases.apply_keyword_aliases(cls, kwargs)`. Call it
+yourself in a custom `from_dict` to keep the same migration rules.

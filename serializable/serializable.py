@@ -18,6 +18,7 @@ from collections.abc import Mapping
 from typing import Any, ClassVar, Optional, TypeVar, Union
 
 from .helpers import from_json, simple_object_to_dict, to_json
+from .keyword_aliases import apply_keyword_aliases
 
 _T = TypeVar("_T", bound="Serializable")
 
@@ -75,18 +76,11 @@ class Serializable:
     @classmethod
     def _update_kwargs(cls, kwargs: dict[str, Any]) -> dict[str, Any]:
         """
-        Rename any old keyword arguments to preserve backwards compatibility
+        Rename any old keyword arguments to preserve backwards compatibility.
+
+        Kept as an overridable hook for from_dict; see apply_keyword_aliases.
         """
-        # check every class in the inheritance chain for its own
-        # definition of _SERIALIZABLE_KEYWORD_ALIASES
-        for klass in cls.mro():
-            keyword_rename_dict = getattr(klass, "_SERIALIZABLE_KEYWORD_ALIASES", {})
-            for old_name, new_name in keyword_rename_dict.items():
-                if old_name in kwargs:
-                    old_value = kwargs.pop(old_name)
-                    if new_name and new_name not in kwargs:
-                        kwargs[new_name] = old_value
-        return kwargs
+        return apply_keyword_aliases(cls, kwargs)
 
     @classmethod
     def from_dict(cls: type[_T], state_dict: Mapping[str, Any]) -> _T:

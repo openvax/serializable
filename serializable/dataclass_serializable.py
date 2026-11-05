@@ -45,6 +45,7 @@ from dataclasses import fields
 from typing import Any, ClassVar, Optional, TypeVar
 
 from .helpers import from_json, to_json
+from .keyword_aliases import apply_keyword_aliases
 
 _T = TypeVar("_T", bound="DataclassSerializable")
 
@@ -73,21 +74,15 @@ class DataclassSerializable:
     def from_dict(cls: type[_T], state_dict: Mapping[str, Any]) -> _T:
         """Reconstruct an instance from a ``to_dict``-shaped dictionary,
         applying ``_SERIALIZABLE_KEYWORD_ALIASES`` for backwards compat."""
-        kwargs = dict(state_dict)
-        for klass in cls.__mro__:
-            aliases = getattr(klass, "_SERIALIZABLE_KEYWORD_ALIASES", {})
-            for old_name, new_name in aliases.items():
-                if old_name in kwargs:
-                    value = kwargs.pop(old_name)
-                    if new_name is not None and new_name not in kwargs:
-                        kwargs[new_name] = value
-        return cls(**kwargs)
+        return cls(**apply_keyword_aliases(cls, dict(state_dict)))
 
     def to_json(self) -> str:
+        """Return a JSON string from which ``from_json`` rebuilds this object."""
         return to_json(self)
 
     @classmethod
     def from_json(cls: type[_T], json_string: str) -> _T:
+        """Reconstruct an object from a string produced by ``to_json``."""
         return from_json(json_string)
 
     def __reduce__(self) -> tuple[Any, ...]:

@@ -23,3 +23,7 @@ Python types; the plain field dictionary and JSON string have different roles.
 ::: serializable.to_serializable_repr
 
 ::: serializable.from_serializable_repr
+
+## Migrate field names
+
+::: serializable.keyword_aliases.apply_keyword_aliases
