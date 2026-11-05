@@ -1,5 +1,8 @@
 # Save existing classes and files
 
+This guide covers classes that are not dataclasses, writing and reading JSON
+files, pickling, and saving containers of objects.
+
 ## Constructor-based classes
 
 Inherit from `Serializable` when you already have a normal constructor. Store

@@ -1,5 +1,8 @@
 # API reference
 
+The two base classes, the module-level helpers for containers, and the
+keyword-alias helper used for migrations.
+
 ## Choose a base class
 
 Use the dataclass mixin to preserve dataclass-generated methods. The original
