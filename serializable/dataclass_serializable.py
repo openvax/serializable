@@ -82,8 +82,21 @@ class DataclassSerializable:
 
     @classmethod
     def from_json(cls: type[_T], json_string: str) -> _T:
-        """Reconstruct an object from a string produced by ``to_json``."""
-        return from_json(json_string)
+        """Reconstruct an instance of this class, or of a subclass, from a
+        string produced by ``to_json``. The class built is the one the JSON
+        names.
+
+        Raises ``ValueError`` if the JSON holds anything else, such as
+        another class or a plain dict. Use the module-level
+        ``serializable.from_json`` to load JSON whose type isn't known in
+        advance."""
+        obj = from_json(json_string)
+        if not isinstance(obj, cls):
+            raise ValueError(
+                f"{cls.__name__}.from_json: the JSON holds {type(obj).__name__}, "
+                f"not {cls.__name__}; use serializable.from_json to load any type"
+            )
+        return obj
 
     def __reduce__(self) -> tuple[Any, ...]:
         """Pickle via the same to_dict / from_dict path used for JSON so
