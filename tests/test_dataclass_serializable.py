@@ -182,3 +182,27 @@ def test_interop_with_legacy_serializable():
 def test_nested_dataclass_serializable_roundtrip():
     o = Outer(name="parent", inner=Inner(n=7))
     eq_(Outer.from_json(o.to_json()), o)
+
+
+@dataclass
+class LabeledPoint(Point):
+    label: str = ""
+
+
+def test_from_json_returns_subclass_named_in_json():
+    p = LabeledPoint(1.0, 2.0, label="a")
+    restored = Point.from_json(p.to_json())
+    eq_(type(restored), LabeledPoint)
+    eq_(restored, p)
+
+
+def test_from_json_rejects_other_class():
+    person_json = Person(name="Ada", age=36).to_json()
+    with pytest.raises(ValueError, match="holds Person, not Point"):
+        Point.from_json(person_json)
+    eq_(from_json(person_json), Person(name="Ada", age=36))
+
+
+def test_from_json_rejects_json_without_class():
+    with pytest.raises(ValueError, match="holds dict, not Point"):
+        Point.from_json('{"x": 1.0, "y": 2.0}')

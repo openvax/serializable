@@ -90,6 +90,11 @@ print(restored["samples"][0].name)
 tumor
 ```
 
+`Sample.from_json()` and `Sample.read_json_file()` return only a `Sample` or
+an instance of a subclass, and raise `ValueError` for JSON that holds anything
+else, such as this dictionary. Use the module-level `from_json()` when the
+type isn't known in advance.
+
 Keep each object's class importable when loading it in another process. A
 notebook or a script's local class is a convenient demonstration; a class in
 an importable module is preferable for persisted data shared across programs.
