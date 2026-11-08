@@ -100,9 +100,20 @@ class Serializable:
     @classmethod
     def from_json(cls: type[_T], json_string: str) -> _T:
         """
-        Reconstruct an instance from a JSON string.
+        Reconstruct an instance of this class, or of a subclass, from a JSON
+        string written by to_json. The class built is the one the JSON names.
+
+        Raises ValueError if the JSON holds anything else, such as another
+        class or a plain dict. Use the module-level serializable.from_json to
+        load JSON whose type isn't known in advance.
         """
-        return from_json(json_string)
+        obj = from_json(json_string)
+        if not isinstance(obj, cls):
+            raise ValueError(
+                f"{cls.__name__}.from_json: the JSON holds {type(obj).__name__}, "
+                f"not {cls.__name__}; use serializable.from_json to load any type"
+            )
+        return obj
 
     def write_json_file(self, path: Union[str, os.PathLike[str]]) -> None:
         """
@@ -115,6 +126,8 @@ class Serializable:
     def read_json_file(cls: type[_T], path: Union[str, os.PathLike[str]]) -> _T:
         """
         Construct an instance of this class from the JSON file at `path`.
+
+        Raises ValueError, as from_json does, if the file holds another type.
         """
         with open(path) as f:
             json_string = f.read()
