@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.1">
     
     
       
@@ -728,6 +728,10 @@ objects. Continuing with <code>sample</code> from above:</p>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code>tumor
 </code></pre></div>
+<p><code>Sample.from_json()</code> and <code>Sample.read_json_file()</code> return only a <code>Sample</code> or
+an instance of a subclass, and raise <code>ValueError</code> for JSON that holds anything
+else, such as this dictionary. Use the module-level <code>from_json()</code> when the
+type isn't known in advance.</p>
 <p>Keep each object's class importable when loading it in another process. A
 notebook or a script's local class is a convenient demonstration; a class in
 an importable module is preferable for persisted data shared across programs.</p>
@@ -783,7 +787,7 @@ an importable module is preferable for persisted data shared across programs.</p
       <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.indexes", "navigation.expand", "content.code.copy"], "search": "../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.c21346df.min.js"></script>
+      <script src="../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
     
   </body>
