@@ -76,6 +76,12 @@ with two underscores are reserved by the format. `to_dict()` is the object's
 field mapping; it does not by itself guarantee an ordinary JSON-compatible
 mapping when those fields contain nested Python objects.
 
+Classes and functions are recorded by module and qualified name, so nested
+classes work, while `to_json()` raises `ValueError` for anything which can't be
+looked up that way: classes or functions defined inside a function, lambdas and
+bound builtin methods. Dataclass fields declared with `init=False` are not
+stored, since the class computes them itself.
+
 Floats must be finite: `to_json()` raises `ValueError` for NaN or infinity,
 which standard JSON can't represent. `from_json()` still reads the `NaN` and
 `Infinity` literals which older versions wrote.

@@ -66,15 +66,22 @@ class DataclassSerializable:
     def to_dict(self) -> dict[str, Any]:
         """Return a dict mapping each dataclass field name to its current
         value. Keys match the ``__init__`` keyword arguments, so
-        ``cls(**obj.to_dict())`` reconstructs an equal instance."""
+        ``cls(**obj.to_dict())`` reconstructs an equal instance. Fields
+        declared with ``init=False`` are left out, since the class computes
+        them itself."""
         # subclasses are dataclasses, the mixin itself isn't
-        return {f.name: getattr(self, f.name) for f in fields(self)}  # type: ignore[arg-type]
+        return {f.name: getattr(self, f.name) for f in fields(self) if f.init}  # type: ignore[arg-type]
 
     @classmethod
     def from_dict(cls: type[_T], state_dict: Mapping[str, Any]) -> _T:
         """Reconstruct an instance from a ``to_dict``-shaped dictionary,
         applying ``_SERIALIZABLE_KEYWORD_ALIASES`` for backwards compat."""
-        return cls(**apply_keyword_aliases(cls, dict(state_dict)))
+        kwargs = dict(state_dict)
+        # versions before 1.5.0 also wrote fields which aren't __init__ arguments
+        for f in fields(cls):  # type: ignore[arg-type]
+            if not f.init:
+                kwargs.pop(f.name, None)
+        return cls(**apply_keyword_aliases(cls, kwargs))
 
     def to_json(self) -> str:
         """Return a JSON string from which ``from_json`` rebuilds this object."""

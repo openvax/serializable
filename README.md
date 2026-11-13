@@ -51,7 +51,8 @@ True
 and its module so `from_json()` can rebuild it. The dataclass keeps its own
 generated constructor, equality, representation and hashing. The recorded module and
 class must be importable when loading, so load data only from sources you
-trust.
+trust. A class or function defined inside another function can't be looked
+up again, so serializing it raises `ValueError`.
 
 ## Documentation
 

@@ -17,6 +17,7 @@ objects into serializable types.
 
 from __future__ import annotations
 
+import inspect
 import json
 from functools import lru_cache
 from types import BuiltinFunctionType, FunctionType
@@ -45,12 +46,16 @@ def _class_init_arg_names(cls):
     # doing something wildly hacky by pulling out the arguments to
     # __init__ and hoping that they match fields defined on the object
     try:
-        init_code = cls.__init__.__code__
+        # look through decorators which used functools.wraps
+        init_code = inspect.unwrap(cls.__init__).__code__
     except AttributeError as exc:
         # if object is a namedtuple then we can return its fields
         # as the required initial args
         if hasattr(cls, "_fields"):
             return cls._fields
+        # a class which defines neither __init__ nor __new__ takes no args
+        if cls.__init__ is object.__init__ and cls.__new__ is object.__new__:
+            return ()
         raise ValueError(f"Cannot determine args to {cls.__qualname__}.__init__") from exc
     # drop self argument
     return init_code.co_varnames[1 : init_code.co_argcount]
@@ -114,16 +119,35 @@ def get_module_name(obj):
     return module_name
 
 
+def _importable_representation(obj):
+    """
+    Module and qualified name from which a class or function can be looked up
+    again. Raises ValueError for objects which can't be reached that way.
+    """
+    module_name = get_module_name(obj)
+    qualified_name = obj.__qualname__
+    if module_name is None or "<" in qualified_name:
+        # e.g. "f.<locals>.C", "<lambda>" or a builtin method such as [].append
+        raise ValueError(
+            f"Can't serialize {obj}: only classes and functions which can be looked up by "
+            f"name in a module are supported (got {module_name}.{qualified_name})"
+        )
+    return {"__module__": module_name, "__name__": qualified_name}
+
+
 def class_to_serializable_representation(cls):
     """
     Given a class, return two strings:
         - fully qualified import path for its module
-        - name of the class
+        - qualified name of the class (e.g. "Outer.Inner" for a nested class)
 
     The class can be reconstructed from these two strings by calling
     class_from_serializable_representation.
+
+    Raises ValueError for a class defined inside a function, which can't be
+    looked up by name.
     """
-    return {"__module__": get_module_name(cls), "__name__": cls.__name__}
+    return _importable_representation(cls)
 
 
 def function_from_serializable_representation(fn_repr):
@@ -137,7 +161,8 @@ def function_from_serializable_representation(fn_repr):
 def function_to_serializable_representation(fn):
     """
     Converts a Python function into a serializable representation. Does not
-    currently work for methods or functions with closure data.
+    currently work for methods, lambdas, functions defined inside another
+    function or functions with closure data.
     """
     if type(fn) not in (FunctionType, BuiltinFunctionType):
         raise ValueError(f"Can't serialize {fn} : {type(fn)}, must be globally defined function")
@@ -145,7 +170,7 @@ def function_to_serializable_representation(fn):
     if hasattr(fn, "__closure__") and fn.__closure__ is not None:
         raise ValueError(f"No serializable representation for closure {fn}")
 
-    return {"__module__": get_module_name(fn), "__name__": fn.__name__}
+    return _importable_representation(fn)
 
 
 SERIALIZED_DICTIONARY_KEYS_FIELD = "__serialized_keys__"
@@ -303,7 +328,7 @@ def to_serializable_repr(x: Any) -> Any:
         return dict_to_serializable_repr(x)
     if isinstance(x, (FunctionType, BuiltinFunctionType)):
         return function_to_serializable_representation(x)
-    if type(x) is type:
+    if isinstance(x, type):
         return class_to_serializable_representation(x)
     state_dictionary = to_serializable_repr(to_dict(x))
     state_dictionary["__class__"] = class_to_serializable_representation(x.__class__)
