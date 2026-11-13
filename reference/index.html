@@ -1173,7 +1173,9 @@ field names across releases: map an old name to the new name, or to
 
         <p>Return a dict mapping each dataclass field name to its current
 value. Keys match the <code>__init__</code> keyword arguments, so
-<code>cls(**obj.to_dict())</code> reconstructs an equal instance.</p>
+<code>cls(**obj.to_dict())</code> reconstructs an equal instance. Fields
+declared with <code>init=False</code> are left out, since the class computes
+them itself.</p>
 
 
     </div>
