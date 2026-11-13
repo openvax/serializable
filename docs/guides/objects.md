@@ -96,5 +96,7 @@ else, such as this dictionary. Use the module-level `from_json()` when the
 type isn't known in advance.
 
 Keep each object's class importable when loading it in another process. A
-notebook or a script's local class is a convenient demonstration; a class in
-an importable module is preferable for persisted data shared across programs.
+class defined at the top level of a notebook or script is a convenient
+demonstration; a class in an importable module is preferable for persisted
+data shared across programs. A class defined inside a function can't be
+looked up again, so serializing it raises `ValueError`.
