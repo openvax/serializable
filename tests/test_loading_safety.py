@@ -87,12 +87,60 @@ def test_function_as_class_is_not_called(payload):
 
 
 def test_value_only_constructs_collections_and_enums():
+    # for any other class __value__ is a keyword like any other, which these reject
     payload = {"__class__": _repr_of(Painted), "__value__": "x"}
-    with pytest.raises(ValueError, match="__value__"):
+    with pytest.raises(TypeError, match="__value__"):
         from_json(json.dumps(payload))
     payload = {"__class__": {"__module__": "builtins", "__name__": "bytearray"}, "__value__": 10}
-    with pytest.raises(ValueError, match="__value__"):
+    with pytest.raises(TypeError):
         from_serializable_repr(payload)
+
+
+class Box(Serializable):
+    """Uses the format's own key name for its state."""
+
+    def __init__(self, value):
+        self.value = value
+
+    def to_dict(self):
+        return {"__value__": self.value}
+
+    @classmethod
+    def from_dict(cls, state_dict):
+        return cls(state_dict["__value__"])
+
+
+def test_class_with_value_key_in_its_own_state_roundtrips():
+    eq_(Box(3), from_json(Box(3).to_json()))
+    eq_(Box([Box(1)]), from_serializable_repr(to_serializable_repr(Box([Box(1)]))))
+
+
+class Opaque:
+    """No value-based equality, and nothing serializable about it."""
+
+    def __init__(self):
+        self.handle = object()
+
+
+class Handles(enum.Enum):
+    FIRST = Opaque()
+    SECOND = Opaque()
+    ALSO_FIRST = FIRST
+
+
+def test_enum_member_is_written_by_name():
+    eq_(to_serializable_repr(Color.RED), {"__class__": _repr_of(Color), "__member__": "RED"})
+    assert from_json(to_json(Handles.SECOND)) is Handles.SECOND
+    assert from_json(to_json(Handles.ALSO_FIRST)) is Handles.FIRST
+
+
+def test_enum_member_written_by_value_in_1_6_0_still_loads():
+    assert from_serializable_repr({"__class__": _repr_of(Color), "__value__": 1}) is Color.RED
+
+
+def test_unknown_enum_member_name():
+    with pytest.raises(ValueError, match="no member named 'PURPLE'"):
+        from_serializable_repr({"__class__": _repr_of(Color), "__member__": "PURPLE"})
 
 
 @pytest.mark.parametrize("member", [Color.RED, Color.GREEN, Color.PAIR])
@@ -102,7 +150,9 @@ def test_enum_member_roundtrip(member):
 
 
 def test_enum_flag_roundtrip():
+    assert from_json(to_json(Permission.READ)) is Permission.READ
     combined = Permission.READ | Permission.WRITE
+    eq_(to_serializable_repr(combined), {"__class__": _repr_of(Permission), "__value__": 3})
     eq_(from_json(to_json(combined)), combined)
 
 
@@ -174,7 +224,7 @@ def test_dict_with_class_under_reserved_key_is_rejected_when_writing():
 
 def test_value_does_not_construct_subclasses_of_collections():
     payload = {"__class__": {"__module__": "os", "__name__": "stat_result"}, "__value__": []}
-    with pytest.raises(ValueError, match="__value__"):
+    with pytest.raises(TypeError):
         from_serializable_repr(payload)
 
 
