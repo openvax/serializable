@@ -70,7 +70,7 @@ reading order:
 ## Development
 
 ```sh
-python -m pip install -e ".[dev]"   # or ./develop.sh, which uses .venv
+./develop.sh   # strict editable install with dev dependencies into .venv
 ./format.sh   # ruff format
 ./lint.sh     # ruff check, ruff format --check and mypy
 ./test.sh     # pytest with coverage
@@ -78,6 +78,17 @@ python -m pip install -r requirements-docs.txt
 ./docs.sh     # mkdocs build --strict, then a rendered-link check
 python scripts/check_docs_examples.py   # run docs examples, compare output
 ```
+
+To install a checkout into another environment, use a strict editable install
+so type checkers in projects which depend on serializable can find it:
+
+```sh
+python -m pip install -C editable_mode=strict -e .
+```
+
+Rerun that after adding or renaming a file in `serializable/`, or after
+deleting the checkout's `build/` directory, which is where the installed link
+tree lives. Edits to existing files are picked up immediately.
 
 Every PR bumps `serializable/version.py`. Maintainers release with
 `./deploy.sh` from a clean `master`.
