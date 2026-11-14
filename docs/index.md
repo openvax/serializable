@@ -75,8 +75,8 @@ run arbitrary code.
 
 Supported values include primitive values, dictionaries, lists, tuples, sets,
 frozensets, `enum.Enum` members and objects implementing the serialization
-interface. Members of `IntEnum` and `StrEnum` are written as their plain
-values. Dictionary keys beginning
+interface. Enum members are recorded by name, and combinations of flags by
+value. Members of `IntEnum` and `StrEnum` are written as their plain values. Dictionary keys beginning
 with two underscores are reserved by the format. `to_dict()` is the object's
 field mapping; it does not by itself guarantee an ordinary JSON-compatible
 mapping when those fields contain nested Python objects.

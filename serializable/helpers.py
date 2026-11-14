@@ -179,7 +179,7 @@ def function_to_serializable_representation(fn):
 _LOOKED_UP_BY_NAME = (type, FunctionType, BuiltinFunctionType)
 
 # the builtin classes whose instances are written as
-# {"__class__": ..., "__value__": [...]}, as are members of Enum classes
+# {"__class__": ..., "__value__": [...]}
 _COLLECTIONS_BUILT_FROM_VALUE = (set, frozenset, tuple)
 
 SERIALIZED_DICTIONARY_KEYS_FIELD = "__serialized_keys__"
@@ -311,13 +311,20 @@ def _from_reconstructed_dict(x):
         # a dictionary which isn't an object, even if it has a "__class__" key
         return x
     del x["__class__"]
-    if "__value__" in x:
-        if class_object not in _COLLECTIONS_BUILT_FROM_VALUE and not issubclass(class_object, Enum):
-            raise ValueError(
-                f"Can't construct {class_object.__qualname__} from __value__, "
-                f"only sets, frozensets, tuples and enums are represented that way"
-            )
+    if issubclass(class_object, Enum):
+        if "__member__" in x:
+            try:
+                return class_object[x["__member__"]]
+            except KeyError:
+                raise ValueError(
+                    f"{class_object.__qualname__} has no member named {x['__member__']!r}"
+                ) from None
+        if "__value__" in x:
+            return class_object(x["__value__"])
+    elif "__value__" in x and class_object in _COLLECTIONS_BUILT_FROM_VALUE:
         return class_object(x["__value__"])
+    # for any other class "__value__" is a field like any other, never a
+    # single positional argument
     if hasattr(class_object, "from_dict"):
         return class_object.from_dict(x)
     return class_object(**x)
@@ -380,11 +387,13 @@ def to_serializable_repr(x: Any) -> Any:
     if isinstance(x, type):
         return class_to_serializable_representation(x)
     if isinstance(x, Enum) and not hasattr(x, "to_dict"):
-        # members are looked up by value, they can't be constructed from fields
-        return {
-            "__class__": class_to_serializable_representation(t),
-            "__value__": to_serializable_repr(x.value),
-        }
+        # members are looked up again, they can't be constructed from fields
+        class_repr = class_to_serializable_representation(t)
+        if t.__members__.get(x.name) is x:
+            # by name, so the member's value doesn't have to be serializable
+            return {"__class__": class_repr, "__member__": x.name}
+        # a combination of flags has no name of its own
+        return {"__class__": class_repr, "__value__": to_serializable_repr(x.value)}
     state_dictionary = to_serializable_repr(to_dict(x))
     state_dictionary["__class__"] = class_to_serializable_representation(x.__class__)
     return state_dictionary

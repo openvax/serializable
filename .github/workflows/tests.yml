@@ -23,7 +23,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -C editable_mode=strict -e ".[dev]"
 
       - name: Lint with ruff
         run: |
@@ -80,7 +80,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+          pip install -C editable_mode=strict -e ".[dev]"
 
       - name: Run unit tests
         run: |
