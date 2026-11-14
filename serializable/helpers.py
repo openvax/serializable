@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import inspect
 import json
+from enum import Enum
 from functools import lru_cache
 from types import BuiltinFunctionType, FunctionType
 from typing import Any, Union
@@ -82,7 +83,7 @@ def _lookup_value(module_string, name):
 
     module_parts = module_string.split(".")
     value = None
-    i = 0
+    n_imported = 0
     for i in range(1, len(module_parts) + 1):
         try:
             # try importing successively longer chains of
@@ -92,12 +93,13 @@ def _lookup_value(module_string, name):
             value = __import__(qualified_name, fromlist=module_parts[: i - 1])
         except ImportError:
             break
+        n_imported = i
 
     if value is None:
         raise ImportError(module_parts[0])
     # once we've imported as much as we can, continue with getattr
     # lookups
-    for attribute_name in module_parts[i:] + name.split("."):
+    for attribute_name in module_parts[n_imported:] + name.split("."):
         value = getattr(value, attribute_name)
     _MODULE_LOOKUP_CACHE[key] = value
     return value
@@ -173,6 +175,13 @@ def function_to_serializable_representation(fn):
     return _importable_representation(fn)
 
 
+# the only kinds of object which are written as a module and a name
+_LOOKED_UP_BY_NAME = (type, FunctionType, BuiltinFunctionType)
+
+# the builtin classes whose instances are written as
+# {"__class__": ..., "__value__": [...]}, as are members of Enum classes
+_COLLECTIONS_BUILT_FROM_VALUE = (set, frozenset, tuple)
+
 SERIALIZED_DICTIONARY_KEYS_FIELD = "__serialized_keys__"
 SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX = SERIALIZED_DICTIONARY_KEYS_FIELD + "element_"
 
@@ -192,10 +201,9 @@ def parse_serialized_keys_index(name):
     but returns None for other strings.
     """
     if name.startswith(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX):
-        try:
-            return int(name[len(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX) :])
-        except ValueError:
-            pass
+        index = name[len(SERIALIZED_DICTIONARY_KEYS_ELEMENT_PREFIX) :]
+        if index.isascii() and index.isdigit():
+            return int(index)
     return None
 
 
@@ -209,6 +217,8 @@ def dict_to_serializable_repr(x):
     # used as keys in this dictionary
     serialized_key_list = []
     serialized_keys_to_names = {}
+    # string keys of x which look like our own placeholders
+    reserved_string_keys = []
     # use the class of x rather just dict since we might want to convert
     # derived classes such as OrderedDict
     result = type(x)()
@@ -226,8 +236,21 @@ def dict_to_serializable_repr(x):
                 k = index_to_serialized_key_name(len(serialized_key_list))
                 serialized_keys_to_names[serialized_key_repr] = k
                 serialized_key_list.append(serialized_key_repr)
+        elif k == SERIALIZED_DICTIONARY_KEYS_FIELD or parse_serialized_keys_index(k) is not None:
+            reserved_string_keys.append(k)
+        elif k == "__class__" and isinstance(v, _LOOKED_UP_BY_NAME):
+            # would be read back as an instance of v, rather than as this dictionary
+            raise ValueError(
+                f"Can't serialize a dictionary whose reserved key '__class__' holds {v}"
+            )
         result[k] = to_serializable_repr(v)
     if len(serialized_key_list) > 0:
+        if reserved_string_keys:
+            # the placeholders would overwrite, or be mistaken for, these keys
+            raise ValueError(
+                f"Can't serialize a dictionary which has both non-string keys and the "
+                f"reserved string keys {reserved_string_keys}"
+            )
         # only include this list of serialized keys if we had any non-string
         # keys
         result[SERIALIZED_DICTIONARY_KEYS_FIELD] = serialized_key_list
@@ -250,24 +273,50 @@ def _from_reconstructed_dict(x):
         metadata and then have an inner dictionary which represents the
         flattened result of to_dict() for user-defined objects.
     """
-    if "__name__" in x:
-        return _lookup_value(x["__module__"], x["__name__"])
+    name, module_name = x.get("__name__"), x.get("__module__")
+    if len(x) == 2 and isinstance(name, str) and isinstance(module_name, str):
+        value = _lookup_value(module_name, name)
+        if not isinstance(value, _LOOKED_UP_BY_NAME):
+            raise ValueError(
+                f"Expected {module_name}.{name} to be a class or function but got {type(value)}"
+            )
+        return value
 
-    serialized_keys = x.pop(SERIALIZED_DICTIONARY_KEYS_FIELD, None)
-    if serialized_keys:
+    # anything other than a list of JSON strings is the caller's own data
+    serialized_keys = x.get(SERIALIZED_DICTIONARY_KEYS_FIELD)
+    if (
+        isinstance(serialized_keys, list)
+        and serialized_keys
+        and all(isinstance(serialized_key, str) for serialized_key in serialized_keys)
+    ):
         non_string_key_objects = [from_json(serialized_key) for serialized_key in serialized_keys]
         converted_dict = type(x)()
         for k, v in x.items():
+            if k == SERIALIZED_DICTIONARY_KEYS_FIELD:
+                continue
             serialized_key_index = parse_serialized_keys_index(k)
-            if serialized_key_index is not None:
+            if serialized_key_index is not None and serialized_key_index < len(
+                non_string_key_objects
+            ):
                 k = non_string_key_objects[serialized_key_index]
             converted_dict[k] = v
         x = converted_dict
 
-    if "__class__" not in x:
+    class_object = x.get("__class__")
+    if not isinstance(class_object, type):
+        if callable(class_object):
+            # only classes are ever written here, so a function is either a
+            # mistake or an attempt to have us call it
+            raise ValueError(f"Expected __class__ to be a class but got {class_object}")
+        # a dictionary which isn't an object, even if it has a "__class__" key
         return x
-    class_object = x.pop("__class__")
+    del x["__class__"]
     if "__value__" in x:
+        if class_object not in _COLLECTIONS_BUILT_FROM_VALUE and not issubclass(class_object, Enum):
+            raise ValueError(
+                f"Can't construct {class_object.__qualname__} from __value__, "
+                f"only sets, frozensets, tuples and enums are represented that way"
+            )
         return class_object(x["__value__"])
     if hasattr(class_object, "from_dict"):
         return class_object.from_dict(x)
@@ -319,7 +368,7 @@ def to_serializable_repr(x: Any) -> Any:
     t = type(x)
     if isinstance(x, list):
         return list_to_serializable_repr(x)
-    if t in (set, tuple):
+    if t in _COLLECTIONS_BUILT_FROM_VALUE:
         return {
             "__class__": class_to_serializable_representation(t),
             "__value__": list_to_serializable_repr(x),
@@ -330,6 +379,12 @@ def to_serializable_repr(x: Any) -> Any:
         return function_to_serializable_representation(x)
     if isinstance(x, type):
         return class_to_serializable_representation(x)
+    if isinstance(x, Enum) and not hasattr(x, "to_dict"):
+        # members are looked up by value, they can't be constructed from fields
+        return {
+            "__class__": class_to_serializable_representation(t),
+            "__value__": to_serializable_repr(x.value),
+        }
     state_dictionary = to_serializable_repr(to_dict(x))
     state_dictionary["__class__"] = class_to_serializable_representation(x.__class__)
     return state_dictionary
