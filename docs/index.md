@@ -68,10 +68,15 @@ This is a Python object round-trip format, rather than a language-independent
 application schema. Deserialization imports the recorded module and looks up
 the class, so that module and class must remain available in the loading
 environment. Load representations from sources you trust: reconstruction
-imports modules and calls constructors.
+imports modules and calls constructors. A function named where a class is
+expected raises `ValueError` instead of being called. That guards against
+mistakes; it isn't a sandbox, since constructing an arbitrary class can itself
+run arbitrary code.
 
-Supported values include primitive values, dictionaries, lists, tuples, sets
-and objects implementing the serialization interface. Dictionary keys beginning
+Supported values include primitive values, dictionaries, lists, tuples, sets,
+frozensets, `enum.Enum` members and objects implementing the serialization
+interface. Members of `IntEnum` and `StrEnum` are written as their plain
+values. Dictionary keys beginning
 with two underscores are reserved by the format. `to_dict()` is the object's
 field mapping; it does not by itself guarantee an ordinary JSON-compatible
 mapping when those fields contain nested Python objects.

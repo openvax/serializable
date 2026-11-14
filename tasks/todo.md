@@ -1,32 +1,30 @@
-# Round-trip bug fixes (1.5.0)
+# Loading guards, enums and frozensets, reserved keys (1.6.0)
 
 ## Specification
 
-Fix five cases where a value is written but can't be read back (or can't be
-written at all), and reject at write time the values which could never be
-loaded. JSON written by earlier versions must keep loading unchanged.
+Finish the bugs found in the 1.3.2 audit (#34, #26):
 
-1. `DataclassSerializable`: fields declared `init=False` are not constructor
-   arguments. Leave them out of `to_dict()`, and ignore them in `from_dict()`
-   so data written by older versions loads.
-2. Nested classes and functions: record `__qualname__` instead of `__name__`
-   (identical for top-level definitions, so the format is unchanged for them).
-3. Classes with a metaclass (e.g. `abc.ABC` subclasses) serialize as class
-   values: test `isinstance(x, type)` rather than `type(x) is type`.
-4. A class which inherits `object.__init__` (and `object.__new__`) has no
-   constructor arguments, rather than being an error.
-5. A decorated `__init__` (using `functools.wraps`) is unwrapped before its
-   argument names are read.
-6. Write-time `ValueError` for classes and functions which can't be looked up
-   by name: defined inside a function (`<locals>`), lambdas, and builtin
-   methods without a module.
+1. `from_json` / `from_serializable_repr` only construct classes: a function
+   under `__class__` raises `ValueError` instead of being called, `__value__`
+   is honoured only for `set`, `frozenset`, `tuple` and `Enum` classes, and a
+   module/name reference must resolve to a class or function.
+2. `enum.Enum` members and frozensets round-trip.
+3. Plain dictionaries whose keys resemble the format's own (`__name__`,
+   `__class__`, `__serialized_keys__...`) round-trip where that is
+   unambiguous, and are rejected when writing where it isn't.
+4. `_lookup_value` no longer skips a path component when the module path
+   continues into a class.
+5. `develop.sh` and the README use a strict editable install so downstream
+   type checkers can see the package.
 
-Out of scope (separate PR): restricting what `from_json` may call; reserved
-key collisions in user dictionaries; Enum and frozenset support.
+Out of scope: removing the unused `typechecks` dependency (#15) and dead
+helpers (#30, #31).
 
 ## Plan
 
-- [x] Implement 1–6 in `helpers.py` and `dataclass_serializable.py`.
-- [x] Add tests for each; update docs limitations; bump version to 1.5.0.
+- [x] Implement and test 1–5; update docs; bump version to 1.6.0.
+- [x] Independent code review; address findings.
 - [x] Run `./format.sh`, `./lint.sh`, `./test.sh`.
+- [ ] Compare sibling projects' serialization tests against 1.5.0.
 - [ ] Open PR, pass CI, merge, deploy from clean master.
+- [ ] Reinstall into the shared virtualenv and check its dependents import.
