@@ -105,28 +105,12 @@ def _lookup_value(module_string, name):
     return value
 
 
-def class_from_serializable_representation(class_repr):
-    """
-    Given the name of a module and a class it contains, imports that module
-    and gets the class object from it.
-    """
-    return _lookup_value(class_repr["__module__"], class_repr["__name__"])
-
-
-def get_module_name(obj):
-    """
-    Name of the module where a class or function is defined (its __module__).
-    """
-    module_name = obj.__module__
-    return module_name
-
-
 def _importable_representation(obj):
     """
     Module and qualified name from which a class or function can be looked up
     again. Raises ValueError for objects which can't be reached that way.
     """
-    module_name = get_module_name(obj)
+    module_name = obj.__module__
     qualified_name = obj.__qualname__
     if module_name is None or "<" in qualified_name:
         # e.g. "f.<locals>.C", "<lambda>" or a builtin method such as [].append
@@ -144,20 +128,12 @@ def class_to_serializable_representation(cls):
         - qualified name of the class (e.g. "Outer.Inner" for a nested class)
 
     The class can be reconstructed from these two strings by calling
-    class_from_serializable_representation.
+    from_serializable_repr on the returned dictionary.
 
     Raises ValueError for a class defined inside a function, which can't be
     looked up by name.
     """
     return _importable_representation(cls)
-
-
-def function_from_serializable_representation(fn_repr):
-    """
-    Given the name of a module and a function it contains, imports that module
-    and gets the class object from it.
-    """
-    return _lookup_value(fn_repr["__module__"], fn_repr["__name__"])
 
 
 def function_to_serializable_representation(fn):

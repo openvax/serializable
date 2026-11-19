@@ -59,16 +59,6 @@ class Serializable:
     def __hash__(self) -> int:
         return hash(tuple(sorted(self.to_dict().items())))
 
-    @classmethod
-    def _reconstruct_nested_objects(cls, state_dict: dict[str, Any]) -> dict[str, Any]:
-        """
-        Nested serializable objects will be represented as dictionaries so we
-        allow manual reconstruction of those objects in this method.
-
-        By default just returns the state dictionary unmodified.
-        """
-        return state_dict
-
     # dictionary mapping old keywords to either new names or
     # None if the keyword has been removed from a class
     _SERIALIZABLE_KEYWORD_ALIASES: ClassVar[dict[str, Optional[str]]] = {}
@@ -88,8 +78,7 @@ class Serializable:
         Given a dictionary of flattened fields (result of calling to_dict()),
         returns an instance. Does not modify `state_dict`.
         """
-        state_dict = cls._reconstruct_nested_objects(dict(state_dict))
-        return cls(**cls._update_kwargs(state_dict))
+        return cls(**cls._update_kwargs(dict(state_dict)))
 
     def to_json(self) -> str:
         """
