@@ -25,9 +25,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 requires-python = ">=3.11"
-dependencies = [
-    "typechecks>=0.0.2",
-]
+dependencies = []
 
 [project.optional-dependencies]
 dev = [
